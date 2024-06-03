@@ -64,10 +64,11 @@ bool lux_lexer_is_reserved(token_t* token);
 typedef struct vmtype_s
 {
   char name[128];
+  bool can_be_variable;
   vmtype_t* next;
 } vmtype_t;
 
-bool      lux_vm_register_type(vm_t* vm, const char* type);
+bool      lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable);
 vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type);
 vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type);
 

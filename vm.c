@@ -8,9 +8,10 @@ bool lux_vm_init(vm_t* vm)
 {
   memset(vm->lasterror, 0, 256);
   vm->types = NULL;
-  (void)lux_vm_register_type(vm, "int");
-  (void)lux_vm_register_type(vm, "float");
-  (void)lux_vm_register_type(vm, "bool");
+  (void)lux_vm_register_type(vm, "void",  false);
+  (void)lux_vm_register_type(vm, "int",   true);
+  (void)lux_vm_register_type(vm, "float", true);
+  (void)lux_vm_register_type(vm, "bool",  true);
   return true;
 }
 
@@ -27,7 +28,7 @@ bool lux_vm_load(vm_t* vm, char* buf)
   return true;
 }
 
-bool lux_vm_register_type(vm_t* vm, const char* type)
+bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
 {
   if(lux_vm_get_type_s(vm, type) != NULL)
   {
@@ -39,6 +40,7 @@ bool lux_vm_register_type(vm_t* vm, const char* type)
   strncpy(t->name, type, 128);
   t->name[127] = '\0';
   t->next = vm->types;
+  t->can_be_variable = can_be_variable;
   vm->types = t;
 }
 
