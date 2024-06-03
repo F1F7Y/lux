@@ -19,12 +19,24 @@ bool lux_compiler_compile_file(compiler_t* comp)
     return false;
   }
 
+  if(lux_vm_get_type_t(comp->vm, &rettype) == NULL)
+  {
+    lux_vm_set_error_t(comp->vm, "Unknown return type: '%s'", &rettype);
+    return false;
+  }
+
   token_t name;
   lux_lexer_get_token(comp->lex, &name);
 
   if(name.type != TT_NAME)
   {
-    lux_vm_set_error_st(comp->vm, "Expected %s name, got '%s' instead", "function", &name);
+    lux_vm_set_error_t(comp->vm, "Expected function name, got '%s' instead", &name);
+    return false;
+  }
+
+  if(lux_vm_get_type_t(comp->vm, &name) != NULL || lux_lexer_is_reserved(&name))
+  {
+    lux_vm_set_error(comp->vm, "Function name cannot be a type or a reserved word");
     return false;
   }
 

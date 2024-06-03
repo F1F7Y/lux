@@ -11,8 +11,8 @@ typedef struct compiler_s compiler_t;
 /* compiler.c */
 typedef struct compiler_s
 {
-  vm_t* vm;
-  lexer_t* lex;
+  vm_t* vm;     // vm that owns us
+  lexer_t* lex; // Lexer for the file were compiling
 } compiler_t;
 
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex);
@@ -41,7 +41,7 @@ typedef struct token_s
 
 typedef struct lexer_s
 {
-  vm_t* vm;
+  vm_t* vm;            // vm that owns us
   char* buffer;        // Start of buffer
   char* buffer_end;    // End of buffer ( '\0' at all times or big bad )
   unsigned int length; // Total length of buffer
@@ -51,11 +51,24 @@ typedef struct lexer_s
 } lexer_t;
 
 void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer);
-int lux_lexer_get_token(lexer_t* lex, token_t* token);
+int  lux_lexer_get_token(lexer_t* lex, token_t* token);
 bool lux_lexer_expect_token(lexer_t* lex, char token);
+bool lux_lexer_is_reserved(token_t* token);
 
 /* vm.c */
+typedef struct vmtype_s
+{
+  char name[128];
+  vmtype_t* next;
+} vmtype_t;
+
+bool      lux_vm_register_type(vm_t* vm, const char* type);
+vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type);
+vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type);
+
 void lux_vm_set_error(vm_t* vm, char* error);
+void lux_vm_set_error_s(vm_t* vm, char* error, const char* str1);
+void lux_vm_set_error_t(vm_t* vm, char* error, token_t* token);
 void lux_vm_set_error_ss(vm_t* vm, char* error, const char* str1, const char* str2);
 void lux_vm_set_error_ts(vm_t* vm, char* error, token_t* token, const char* str);
 void lux_vm_set_error_st(vm_t* vm, char* error, const char* str, token_t* token);

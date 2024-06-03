@@ -7,6 +7,11 @@
 #define WHITESPACE " \t\n\r"
 #define CHARTOKENS "(){}[]+-*/\\<>!?=@#$%^&|,.;"
 
+static const char* reserved_tokens[] =
+{
+  "true", "false"
+};
+
 void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer)
 {
   char* c = buffer;
@@ -213,5 +218,19 @@ bool lux_lexer_expect_token(lexer_t* lex, char token)
   temp[0] = token;
   temp[1] = '\0';
   lux_vm_set_error_st(lex->vm, "Expected '%s', got '%s'", temp, &tk);
+  return false;
+}
+
+bool lux_lexer_is_reserved(token_t* token)
+{
+  for(int i = 0; i < sizeof(reserved_tokens)/sizeof(*reserved_tokens); i++)
+  {
+    const char* rt = reserved_tokens[i];
+    if(!strncmp(rt, token->buf, token->length) && strlen(rt) == token->length)
+    {
+      return true;
+    }
+  }
+
   return false;
 }
