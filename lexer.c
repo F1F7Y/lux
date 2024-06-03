@@ -1,16 +1,17 @@
-#include "lexer.h"
+#include "private.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 #define WHITESPACE " \t\n\r"
-#define CHARTOKENS "(){}[]+-*/\\<>!=@#$%^&|,.;"
+#define CHARTOKENS "(){}[]+-*/\\<>!?=@#$%^&|,.;"
 
-void lux_lexer_init(lexer_t* lex, char* buffer)
+void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer)
 {
   char* c = buffer;
   for(; *c != '\0'; c++) {}
+  lex->vm = vm;
   lex->buffer = buffer;
   lex->buffer_end = c;
   lex->length = c - buffer;
@@ -96,7 +97,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
     token->column = lex->column;
     return token->type;
   }
-  
+
   // Skip comments
   if(*c == '/' && *(c+1) == '/')
   {
@@ -196,4 +197,21 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
 
   lex->column += token->length;
   return token->type;
+}
+
+bool lux_lexer_expect_token(lexer_t* lex, char token)
+{
+  token_t tk;
+  lux_lexer_get_token(lex, &tk);
+
+  if(tk.length == 1 && *tk.buf == token)
+  {
+    return true;
+  }
+
+  char temp[2];
+  temp[0] = token;
+  temp[1] = '\0';
+  lux_vm_set_error_st(lex->vm, "Expected '%s', got '%s'", temp, &tk);
+  return false;
 }

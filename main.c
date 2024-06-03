@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lexer.h"
+#include "public.h"
 
 int main(int argc, char* argv[])
 {
@@ -22,43 +22,11 @@ int main(int argc, char* argv[])
   buf[size] = '\0';
   fclose(f);
 
-  lexer_t lexer;
-  lux_lexer_init(&lexer, buf);
-
-  printf("%-32s | line | column | type\n", "value");
-
-  token_t token;
-  while(lux_lexer_get_token(&lexer, &token) != TT_EOF)
+  vm_t vm;
+  lux_vm_init(&vm);
+  if(!lux_vm_load(&vm, buf))
   {
-    if(!token.length)
-    {
-      break;
-    }
-    switch(token.type)
-    {
-      case TT_INT:
-      {
-        printf("%-32d | %4d | %6d | int\n", token.ivalue, token.line, token.column);
-      }
-      break;
-      case TT_FLOAT:
-      {
-        printf("%-32f | %4d | %6d | float\n", token.fvalue, token.line, token.column);
-      }
-      break;
-      case TT_TOKEN:
-      {
-        printf("%-32c | %4d | %6d | token\n", *token.buf, token.line, token.column);
-      }
-      break;
-      default:
-      {
-        char temp[1024];
-        strncpy(temp, token.buf, token.length);
-        temp[token.length] = '\0';
-        printf("%-32s | %4d | %6d | %3d\n", temp, token.line, token.column, token.type);
-      }
-    }
+    printf("Failed with error: '%s'\n", vm.lasterror);
   }
 
   free(buf);
