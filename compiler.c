@@ -8,7 +8,7 @@ void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
   comp->lex = lex;
 }
 
-bool lux_compile_file(compiler_t* comp)
+bool lux_compiler_compile_file(compiler_t* comp)
 {
   token_t rettype;
   lux_lexer_get_token(comp->lex, &rettype);

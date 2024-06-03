@@ -16,7 +16,7 @@ bool lux_vm_load(vm_t* vm, char* buf)
 
   compiler_t comp;
   lux_compiler_init(&comp, vm, &lexer);
-  TRY(lux_compile_file(&comp));
+  TRY(lux_compiler_compile_file(&comp));
   printf("Compilation succeeded\n");
 
   return true;

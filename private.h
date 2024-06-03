@@ -16,7 +16,7 @@ typedef struct compiler_s
 } compiler_t;
 
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex);
-bool lux_compile_file(compiler_t* comp);
+bool lux_compiler_compile_file(compiler_t* comp);
 
 /* lexer.c */
 enum
