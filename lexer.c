@@ -23,6 +23,8 @@ void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer)
   lex->cursor = buffer;
   lex->column = 0;
   lex->line = 1;
+  memset(&lex->lasttoken, 0, sizeof(token_t));
+  lex->token_avalible = false;
 }
 
 static void lux_lexer_token_check_integer(lexer_t* lex, token_t* token)
@@ -57,6 +59,13 @@ static void lux_lexer_token_check_float(lexer_t* lex, token_t* token)
 
 int lux_lexer_get_token(lexer_t* lex, token_t* token)
 {
+  if(lex->token_avalible)
+  {
+    lex->token_avalible = false;
+    memcpy(token, &lex->lasttoken, sizeof(token_t));
+    return token->type;
+  }
+
   // Skip over whitespace
   char* c = lex->cursor;
   for(; *c != '\0'; c++)
@@ -100,6 +109,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
     token->length = 1;
     token->line = lex->line;
     token->column = lex->column;
+    memcpy(&lex->lasttoken, token, sizeof(token_t));
     return token->type;
   }
 
@@ -201,6 +211,8 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
   lux_lexer_token_check_integer(lex, token);
 
   lex->column += token->length;
+
+  memcpy(&lex->lasttoken, token, sizeof(token_t));
   return token->type;
 }
 
@@ -219,6 +231,12 @@ bool lux_lexer_expect_token(lexer_t* lex, char token)
   temp[1] = '\0';
   lux_vm_set_error_st(lex->vm, "Expected '%s', got '%s'", temp, &tk);
   return false;
+}
+
+void lux_lexer_unget_last_token(lexer_t* lex)
+{
+  assert(!lex->token_avalible);
+  lex->token_avalible = true;
 }
 
 bool lux_lexer_is_reserved(token_t* token)

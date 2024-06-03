@@ -3,6 +3,8 @@
 
 #include "public.h"
 
+#include <assert.h>
+
 #define TRY(exp) if(!exp) {return false;}
 
 typedef struct lexer_s lexer_t;
@@ -48,11 +50,14 @@ typedef struct lexer_s
   char* cursor;        // Cursor in the buffer
   int column;          // Current column
   int line;            // Current line
+  token_t lasttoken;   // Last token
+  bool token_avalible; // If lasttoken is next
 } lexer_t;
 
 void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer);
 int  lux_lexer_get_token(lexer_t* lex, token_t* token);
 bool lux_lexer_expect_token(lexer_t* lex, char token);
+void lux_lexer_unget_last_token(lexer_t* lex);
 bool lux_lexer_is_reserved(token_t* token);
 
 /* vm.c */
