@@ -42,5 +42,18 @@ int main(int argc, char* argv[])
 
     free(buf);
   }
+
+  printf("Compiled, running 'main'\n");
+
+  functionproto_t* fp = lux_vm_get_function(&vm, "main");
+
+  if(!fp)
+  {
+    printf("Failed to get function: 'main'\n");
+    return 0;
+  }
+
+  lux_vm_call_function(&vm, fp);
+
   return 0;
 }

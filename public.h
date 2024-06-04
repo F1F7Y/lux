@@ -17,4 +17,7 @@ typedef struct vm_s
 bool lux_vm_init(vm_t* vm);
 bool lux_vm_load(vm_t* vm, char* buf);
 
+functionproto_t* lux_vm_get_function(vm_t* vm, const char* name);
+bool lux_vm_call_function(vm_t* vm, functionproto_t* func);
+
 #endif

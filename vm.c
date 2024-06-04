@@ -24,9 +24,26 @@ bool lux_vm_load(vm_t* vm, char* buf)
   compiler_t comp;
   lux_compiler_init(&comp, vm, &lexer);
   TRY(lux_compiler_compile_file(&comp));
-  printf("Compilation succeeded\n");
 
   return true;
+}
+
+functionproto_t* lux_vm_get_function(vm_t* vm, const char* name)
+{
+  for(functionproto_t* fp = vm->functions; fp != NULL; fp = fp->next)
+  {
+    if(!strcmp(fp->name, name))
+    {
+      return fp;
+    }
+  }
+
+  return NULL;
+}
+
+bool lux_vm_call_function(vm_t* vm, functionproto_t* func)
+{
+  
 }
 
 bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
