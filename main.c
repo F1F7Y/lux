@@ -6,29 +6,41 @@
 
 int main(int argc, char* argv[])
 {
-  printf("Hello world!\n");
-
-  FILE* f = fopen("draft.lux", "r");
-  if(!f)
+  if(argc < 2)
   {
-    printf("Failed to open 'draft.lux'\n");
-    return -1;
+    printf("Lux script dev\n");
+    printf("Usage: <exe> <scripts...>\n");
+    return 0;
   }
-  fseek(f, 0, SEEK_END);
-  int size = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  char* buf = malloc(size + 1);
-  fread(buf, size, 1, f);
-  buf[size] = '\0';
-  fclose(f);
 
   vm_t vm;
   lux_vm_init(&vm);
-  if(!lux_vm_load(&vm, buf))
+  for(int i = 1 ; i < argc; i++)
   {
-    printf("Failed with error: '%s'\n", vm.lasterror);
-  }
+    const char* file = argv[i];
+    printf("Loading %s\n", file);
+    FILE* f = fopen(file, "r");
+    if(!f)
+    {
+      printf("Failed to open %s, skipping\n", file);
+      continue;
+    }
 
-  free(buf);
+    fseek(f, 0, SEEK_END);
+    int size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char* buf = malloc(size + 1);
+    fread(buf, size, 1, f);
+    buf[size] = '\0';
+    fclose(f);
+
+    if(!lux_vm_load(&vm, buf))
+    {
+      printf("Failed to compile %s with error: %s\n", file, vm.lasterror);
+      return 0;
+    }
+
+    free(buf);
+  }
   return 0;
 }
