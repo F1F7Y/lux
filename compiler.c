@@ -22,8 +22,9 @@ bool lux_compiler_compile_file(compiler_t* comp)
       lux_vm_set_error(comp->vm, "Only function definitions can be at root level");
       return false;
     }
-
-    if(lux_vm_get_type_t(comp->vm, &rettype) == NULL)
+    
+    vmtype_t* t = lux_vm_get_type_t(comp->vm, &rettype); 
+    if(t == NULL)
     {
       lux_vm_set_error_t(comp->vm, "Unknown return type: '%s'", &rettype);
       return false;
@@ -43,6 +44,9 @@ bool lux_compiler_compile_file(compiler_t* comp)
       lux_vm_set_error(comp->vm, "Function name cannot be a type or a reserved word");
       return false;
     }
+
+    functionproto_t* fp = lux_vm_register_function_t(comp->vm, &name, t);
+    TRY(fp);
 
     TRY(lux_lexer_expect_token(comp->lex, '('))
     bool read_function_args = !lux_lexer_expect_token(comp->lex, ')');

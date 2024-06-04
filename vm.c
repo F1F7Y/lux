@@ -8,6 +8,7 @@ bool lux_vm_init(vm_t* vm)
 {
   memset(vm->lasterror, 0, 256);
   vm->types = NULL;
+  vm->functions = NULL;
   (void)lux_vm_register_type(vm, "void",  false);
   (void)lux_vm_register_type(vm, "int",   true);
   (void)lux_vm_register_type(vm, "float", true);
@@ -64,6 +65,64 @@ vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type)
     if(!strncmp(t->name, type->buf, type->length) && strlen(t->name) == type->length)
     {
       return t;
+    }
+  }
+
+  return NULL;
+}
+
+functionproto_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype)
+{
+  if(lux_vm_get_function_s(vm, name) != NULL)
+  {
+    lux_vm_set_error_s(vm, "Function '%s' already exists", name);
+    return NULL;
+  }
+
+  functionproto_t* fp = malloc(sizeof(functionproto_t));
+  strncpy(fp->name, name, 128);
+  fp->name[127] = '\0';
+  fp->rettype = rettype;
+  fp->next = vm->functions;
+  vm->functions = fp;
+  return fp;
+}
+
+functionproto_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype)
+{
+  if(name->length > 127)
+  {
+    lux_vm_set_error(vm, "A function name cannot be longer than 127 bytes");
+    return NULL;
+  }
+
+  char tokenbuf[1024];
+  strncpy(tokenbuf, name->buf, 1024);
+  tokenbuf[name->length] = '\0';
+
+  return lux_vm_register_function_s(vm, tokenbuf, rettype);
+}
+
+functionproto_t* lux_vm_get_function_s(vm_t* vm, const char* name)
+{
+  for(functionproto_t* fp = vm->functions; fp != NULL; fp = fp->next)
+  {
+    if(!strcmp(fp->name, name))
+    {
+      return fp;
+    }
+  }
+
+  return NULL;
+}
+
+functionproto_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
+{
+  for(functionproto_t* fp = vm->functions; fp != NULL; fp = fp->next)
+  {
+    if(!strncmp(fp->name, name->buf, name->length) && strlen(fp->name) == name->length)
+    {
+      return fp;
     }
   }
 

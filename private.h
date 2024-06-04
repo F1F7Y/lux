@@ -68,9 +68,21 @@ typedef struct vmtype_s
   vmtype_t* next;
 } vmtype_t;
 
+typedef struct functionproto_s
+{
+  char name[128];
+  vmtype_t* rettype;
+  functionproto_t* next;
+} functionproto_t;
+
 bool      lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable);
 vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type);
 vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type);
+
+functionproto_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype);
+functionproto_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype);
+functionproto_t* lux_vm_get_function_s(vm_t* vm, const char* name);
+functionproto_t* lux_vm_get_function_t(vm_t* vm, token_t* name);
 
 void lux_vm_set_error(vm_t* vm, char* error);
 void lux_vm_set_error_s(vm_t* vm, char* error, const char* str1);
