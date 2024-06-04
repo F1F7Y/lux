@@ -7,6 +7,14 @@
 
 #define TRY(exp) if(!exp) {return false;}
 
+enum
+{            // Size |                   | Usage
+  OP_NOP,    // 1    | <1op>             | No operation
+  OP_LDI,    // 6    | <1op,1reg,4value> | Load value into register
+  OP_CALL,   // 2    | <1op,1reg>        | Call function
+  OP_RET,    // 1    | <1op>             | Return from function
+};
+
 typedef struct lexer_s lexer_t;
 typedef struct compiler_s compiler_t;
 
@@ -14,7 +22,7 @@ typedef struct compiler_s compiler_t;
 typedef struct compiler_s
 {
   vm_t* vm;     // vm that owns us
-  lexer_t* lex; // Lexer for the file were compiling
+  lexer_t* lex; // Lexer for the file we're compiling
 } compiler_t;
 
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex);
@@ -59,6 +67,8 @@ int  lux_lexer_get_token(lexer_t* lex, token_t* token);
 bool lux_lexer_expect_token(lexer_t* lex, char token);
 void lux_lexer_unget_last_token(lexer_t* lex);
 bool lux_lexer_is_reserved(token_t* token);
+bool lux_token_is_c(token_t* token, char c);
+bool lux_token_is_str(token_t* token, const char* str);
 
 /* vm.c */
 typedef struct vmtype_s
@@ -68,21 +78,29 @@ typedef struct vmtype_s
   vmtype_t* next;
 } vmtype_t;
 
-typedef struct functionproto_s
+typedef struct closure_s
 {
   char name[128];
   vmtype_t* rettype;
-  functionproto_t* next;
-} functionproto_t;
+  char* code;
+  int used;
+  int allocated;
+  closure_t* next;
+} closure_t;
 
 bool      lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable);
 vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type);
 vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type);
 
-functionproto_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype);
-functionproto_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype);
-functionproto_t* lux_vm_get_function_s(vm_t* vm, const char* name);
-functionproto_t* lux_vm_get_function_t(vm_t* vm, token_t* name);
+closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype);
+closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype);
+closure_t* lux_vm_get_function_s(vm_t* vm, const char* name);
+closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name);
+
+void lux_vm_closure_append_byte(closure_t* closure, unsigned char byte);
+void lux_vm_closure_append_int(closure_t* closure, int i);
+void lux_vm_closure_append_float(closure_t* closure, float f);
+bool lux_vm_closure_last_byte_is(closure_t* closure, char b);
 
 void lux_vm_set_error(vm_t* vm, char* error);
 void lux_vm_set_error_s(vm_t* vm, char* error, const char* str1);
@@ -90,5 +108,8 @@ void lux_vm_set_error_t(vm_t* vm, char* error, token_t* token);
 void lux_vm_set_error_ss(vm_t* vm, char* error, const char* str1, const char* str2);
 void lux_vm_set_error_ts(vm_t* vm, char* error, token_t* token, const char* str);
 void lux_vm_set_error_st(vm_t* vm, char* error, const char* str, token_t* token);
+
+/* debug.c */
+void lux_debug_dump_code(closure_t* closure);
 
 #endif

@@ -252,3 +252,16 @@ bool lux_lexer_is_reserved(token_t* token)
 
   return false;
 }
+
+bool lux_token_is_c(token_t* token, char c)
+{
+  return token->length == 1 && token->type == TT_TOKEN && *token->buf == c;
+}
+
+bool lux_token_is_str(token_t* token, const char* str)
+{
+  if(token->type != TT_NAME)
+  { return false; }
+
+  return strlen(str) == token->length && !strncmp(str, token->buf, token->length);
+}

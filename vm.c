@@ -28,9 +28,9 @@ bool lux_vm_load(vm_t* vm, char* buf)
   return true;
 }
 
-functionproto_t* lux_vm_get_function(vm_t* vm, const char* name)
+closure_t* lux_vm_get_function(vm_t* vm, const char* name)
 {
-  for(functionproto_t* fp = vm->functions; fp != NULL; fp = fp->next)
+  for(closure_t* fp = vm->functions; fp != NULL; fp = fp->next)
   {
     if(!strcmp(fp->name, name))
     {
@@ -41,7 +41,7 @@ functionproto_t* lux_vm_get_function(vm_t* vm, const char* name)
   return NULL;
 }
 
-bool lux_vm_call_function(vm_t* vm, functionproto_t* func)
+bool lux_vm_call_function(vm_t* vm, closure_t* func)
 {
   
 }
@@ -88,7 +88,7 @@ vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type)
   return NULL;
 }
 
-functionproto_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype)
+closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype)
 {
   if(lux_vm_get_function_s(vm, name) != NULL)
   {
@@ -96,16 +96,19 @@ functionproto_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t
     return NULL;
   }
 
-  functionproto_t* fp = malloc(sizeof(functionproto_t));
+  closure_t* fp = malloc(sizeof(closure_t));
   strncpy(fp->name, name, 128);
   fp->name[127] = '\0';
   fp->rettype = rettype;
+  fp->code = NULL;
+  fp->used = 0;
+  fp->allocated = 0;
   fp->next = vm->functions;
   vm->functions = fp;
   return fp;
 }
 
-functionproto_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype)
+closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype)
 {
   if(name->length > 127)
   {
@@ -120,9 +123,9 @@ functionproto_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* r
   return lux_vm_register_function_s(vm, tokenbuf, rettype);
 }
 
-functionproto_t* lux_vm_get_function_s(vm_t* vm, const char* name)
+closure_t* lux_vm_get_function_s(vm_t* vm, const char* name)
 {
-  for(functionproto_t* fp = vm->functions; fp != NULL; fp = fp->next)
+  for(closure_t* fp = vm->functions; fp != NULL; fp = fp->next)
   {
     if(!strcmp(fp->name, name))
     {
@@ -133,9 +136,9 @@ functionproto_t* lux_vm_get_function_s(vm_t* vm, const char* name)
   return NULL;
 }
 
-functionproto_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
+closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
 {
-  for(functionproto_t* fp = vm->functions; fp != NULL; fp = fp->next)
+  for(closure_t* fp = vm->functions; fp != NULL; fp = fp->next)
   {
     if(!strncmp(fp->name, name->buf, name->length) && strlen(fp->name) == name->length)
     {
@@ -144,6 +147,55 @@ functionproto_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
   }
 
   return NULL;
+}
+
+static void lux_vm_closure_ensure_free(closure_t* closure, int size)
+{
+  if(closure->allocated - closure->used > size)
+  {
+    return;
+  }
+
+  if(closure->code == NULL)
+  {
+    closure->code = malloc(8);
+    closure->allocated = 8;
+    return;
+  }
+
+  closure->allocated *= 2;
+  closure->code = realloc(closure->code, closure->allocated);
+}
+
+void lux_vm_closure_append_byte(closure_t* closure, unsigned char byte)
+{
+  lux_vm_closure_ensure_free(closure, 1);
+  *(unsigned char*)(closure->code + closure->used) = byte;
+  closure->used += 1;
+}
+
+void lux_vm_closure_append_int(closure_t* closure, int i)
+{
+  lux_vm_closure_ensure_free(closure, 4);
+  *(int*)(closure->code + closure->used) = i;
+  closure->used += 4;
+}
+
+void lux_vm_closure_append_float(closure_t* closure, float f)
+{
+  lux_vm_closure_ensure_free(closure, 4);
+  *(float*)(closure->code + closure->used) = f;
+  closure->used += 4;
+}
+
+bool lux_vm_closure_last_byte_is(closure_t* closure, char b)
+{
+  if(closure->used == 0)
+  {
+    return false;
+  }
+
+  return *(closure->code + closure->used) == b;
 }
 
 void lux_vm_set_error(vm_t* vm, char* error)

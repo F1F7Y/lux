@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "public.h"
+#include "private.h"
 
 int main(int argc, char* argv[])
 {
@@ -43,9 +44,9 @@ int main(int argc, char* argv[])
     free(buf);
   }
 
-  printf("Compiled, running 'main'\n");
+  printf("Compiled\n");
 
-  functionproto_t* fp = lux_vm_get_function(&vm, "main");
+  closure_t* fp = lux_vm_get_function(&vm, "main");
 
   if(!fp)
   {
@@ -53,7 +54,10 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  lux_vm_call_function(&vm, fp);
+  lux_debug_dump_code(fp);
+
+  //printf("Running 'main'\n");
+  //lux_vm_call_function(&vm, fp);
 
   return 0;
 }
