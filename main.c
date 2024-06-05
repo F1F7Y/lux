@@ -46,6 +46,9 @@ int main(int argc, char* argv[])
 
   printf("Compiled\n");
 
+#if 0
+  lux_debug_dump_code_all(&vm);
+#else
   closure_t* fp = lux_vm_get_function(&vm, "main");
 
   if(!fp)
@@ -54,10 +57,8 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  lux_debug_dump_code(fp);
-
-  //printf("Running 'main'\n");
-  //lux_vm_call_function(&vm, fp);
-
+  printf("Running 'main'\n");
+  lux_vm_call_function(&vm, fp);
+#endif
   return 0;
 }

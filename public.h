@@ -6,19 +6,15 @@
 /* vm.c */
 typedef struct vmtype_s vmtype_t;
 typedef struct closure_s closure_t;
-
-typedef union vmregister_u
-{
-  int ivalue;
-  float fvalue;
-} vmregister_t;
+typedef struct vmframe_s vmframe_t;
+typedef struct vm_s vm_t;
 
 typedef struct vm_s
 {
   char lasterror[256];
   vmtype_t* types;
   closure_t* functions;
-  vmregister_t r[256];
+  vmframe_t* frames;
 } vm_t;
 
 bool lux_vm_init(vm_t* vm);

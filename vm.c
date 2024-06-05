@@ -9,6 +9,7 @@ bool lux_vm_init(vm_t* vm)
   memset(vm->lasterror, 0, 256);
   vm->types = NULL;
   vm->functions = NULL;
+  vm->frames = NULL;
   (void)lux_vm_register_type(vm, "void",  false);
   (void)lux_vm_register_type(vm, "int",   true);
   (void)lux_vm_register_type(vm, "float", true);
@@ -43,7 +44,14 @@ closure_t* lux_vm_get_function(vm_t* vm, const char* name)
 
 bool lux_vm_call_function(vm_t* vm, closure_t* func)
 {
-  
+  printf("Calling %s\n", func->name);
+  vmframe_t frame;
+  frame.vm = vm;
+  frame.closure = func;
+  frame.next = vm->frames;
+  vm->frames = &frame;
+  TRY(lux_vm_interpret_frame(vm, &frame))
+  vm->frames = frame.next;
 }
 
 bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
@@ -99,11 +107,21 @@ closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rett
   closure_t* fp = malloc(sizeof(closure_t));
   strncpy(fp->name, name, 128);
   fp->name[127] = '\0';
+  fp->native = false;
   fp->rettype = rettype;
   fp->code = NULL;
   fp->used = 0;
   fp->allocated = 0;
   fp->next = vm->functions;
+  if(vm->functions == NULL)
+  {
+    fp->index = 0;
+  }
+  else
+  {
+    fp->index = vm->functions->index + 1;
+  }
+
   vm->functions = fp;
   return fp;
 }

@@ -81,12 +81,28 @@ typedef struct vmtype_s
 typedef struct closure_s
 {
   char name[128];
+  bool native;
   vmtype_t* rettype;
+  int index;
   char* code;
   int used;
   int allocated;
   closure_t* next;
 } closure_t;
+
+typedef union vmregister_u
+{
+  int ivalue;
+  float fvalue;
+} vmregister_t;
+
+typedef struct vmframe_s
+{
+  vm_t* vm;
+  closure_t* closure;
+  vmregister_t r[256];
+  vmframe_t* next;
+} vmframe_t;
 
 bool      lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable);
 vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type);
@@ -109,7 +125,11 @@ void lux_vm_set_error_ss(vm_t* vm, char* error, const char* str1, const char* st
 void lux_vm_set_error_ts(vm_t* vm, char* error, token_t* token, const char* str);
 void lux_vm_set_error_st(vm_t* vm, char* error, const char* str, token_t* token);
 
+/* interpreter.c */
+bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame);
+
 /* debug.c */
+void lux_debug_dump_code_all(vm_t* vm);
 void lux_debug_dump_code(closure_t* closure);
 
 #endif

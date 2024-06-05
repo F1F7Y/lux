@@ -46,6 +46,24 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         }
         lux_vm_closure_append_byte(closure, OP_RET);
       }
+      closure_t* f = lux_vm_get_function_t(comp->vm, &token);
+      if(f != NULL)
+      {
+        TRY(lux_lexer_expect_token(comp->lex, '('));
+        TRY(lux_lexer_expect_token(comp->lex, ')'));
+
+        if(f->rettype->can_be_variable)
+        {
+          printf("WARN: Function return value ignored\n");
+        }
+
+        lux_vm_closure_append_byte(closure, OP_LDI);
+        lux_vm_closure_append_byte(closure, 0);
+        lux_vm_closure_append_int(closure, f->index);
+
+        lux_vm_closure_append_byte(closure, OP_CALL);
+        lux_vm_closure_append_byte(closure, 0);
+      }
     }
   }
 

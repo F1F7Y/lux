@@ -2,9 +2,17 @@
 
 #include <stdio.h>
 
+void lux_debug_dump_code_all(vm_t* vm)
+{
+  for(closure_t* c = vm->functions; c != NULL; c = c->next)
+  {
+    lux_debug_dump_code(c);
+  }
+}
+
 void lux_debug_dump_code(closure_t* closure)
 {
-  printf("Dumping closure: %s\n", closure->name);
+  printf("Dumping closure: %s %s() (index: %d)\n", closure->rettype->name, closure->name, closure->index);
   if(closure->code == NULL)
   {
     printf("Closure has no code\n");
@@ -17,6 +25,7 @@ void lux_debug_dump_code(closure_t* closure)
 
   while(cursor < code_end)
   {
+    printf("  ");
     switch(*cursor)
     {
       case OP_NOP:
