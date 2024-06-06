@@ -116,7 +116,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
   // Skip comments
   if(*c == '/' && *(c+1) == '/')
   {
-    for(; *c != '\n' && *c != '\r'; c++){}
+    for(; *c != '\n' && *c != '\r' && *c != '\0'; c++){}
     for(; *c != '\0'; c++)
     {
       bool whitespace = false;

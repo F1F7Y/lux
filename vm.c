@@ -52,6 +52,7 @@ bool lux_vm_call_function(vm_t* vm, closure_t* func)
   vm->frames = &frame;
   TRY(lux_vm_interpret_frame(vm, &frame))
   vm->frames = frame.next;
+  return true;
 }
 
 bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
@@ -213,7 +214,7 @@ bool lux_vm_closure_last_byte_is(closure_t* closure, char b)
     return false;
   }
 
-  return *(closure->code + closure->used) == b;
+  return *(closure->code + closure->used - 1) == b;
 }
 
 void lux_vm_set_error(vm_t* vm, char* error)

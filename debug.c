@@ -46,6 +46,36 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 2;
       }
       break;
+      case OP_MOV:
+      {
+        printf("mov %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2));
+        cursor += 3;
+      }
+      break;
+      case OP_ADDI:
+      {
+        printf("addi %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        cursor += 4;
+      }
+      break;
+      case OP_SUBI:
+      {
+        printf("subi %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        cursor += 4;
+      }
+      break;
+      case OP_MULI:
+      {
+        printf("muli %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        cursor += 4;
+      }
+      break;
+      case OP_DIVI:
+      {
+        printf("divi %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        cursor += 4;
+      }
+      break;
       case OP_RET:
       {
         printf("ret\n");

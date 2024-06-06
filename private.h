@@ -8,11 +8,16 @@
 #define TRY(exp) if(!exp) {return false;}
 
 enum
-{            // Size |                   | Usage
-  OP_NOP,    // 1    | <1op>             | No operation
-  OP_LDI,    // 6    | <1op,1reg,4value> | Load value into register
-  OP_CALL,   // 2    | <1op,1reg>        | Call function
-  OP_RET,    // 1    | <1op>             | Return from function
+{            // Size |                      | Usage
+  OP_NOP,    // 1    | <1op>                | No operation
+  OP_LDI,    // 6    | <1op,1reg,4value>    | Load value into register
+  OP_CALL,   // 2    | <1op,1reg>           | Call function
+  OP_RET,    // 1    | <1op>                | Return from function
+  OP_MOV,    // 3    | <1op,1reg,1reg>      | Move value of register
+  OP_ADDI,   // 4    | <1op,1reg,1reg,1reg> | Add two integers
+  OP_SUBI,   // 4    | <1op,1reg,1reg,1reg> | Substract two integers
+  OP_MULI,   // 4    | <1op,1reg,1reg,1reg> | Multiply two integers
+  OP_DIVI,   // 4    | <1op,1reg,1reg,1reg> | Divide two integers
 };
 
 typedef struct lexer_s lexer_t;
@@ -23,10 +28,14 @@ typedef struct compiler_s
 {
   vm_t* vm;     // vm that owns us
   lexer_t* lex; // Lexer for the file we're compiling
+  bool r[256];  // Keeps track of in use registers
 } compiler_t;
 
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex);
 bool lux_compiler_compile_file(compiler_t* comp);
+void lux_compiler_clear_registers(compiler_t* comp);
+bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg);
+void lux_compiler_free_register(compiler_t* comp, unsigned char reg);
 
 /* lexer.c */
 enum

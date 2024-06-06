@@ -46,9 +46,10 @@ int main(int argc, char* argv[])
 
   printf("Compiled\n");
 
-#if 0
+#if 1
   lux_debug_dump_code_all(&vm);
-#else
+#endif
+#if 1
   closure_t* fp = lux_vm_get_function(&vm, "main");
 
   if(!fp)
@@ -58,7 +59,10 @@ int main(int argc, char* argv[])
   }
 
   printf("Running 'main'\n");
-  lux_vm_call_function(&vm, fp);
+  if(!lux_vm_call_function(&vm, fp))
+  {
+    printf("Error running code: %s\n", vm.lasterror);
+  }
 #endif
   return 0;
 }

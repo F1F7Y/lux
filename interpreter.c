@@ -14,7 +14,6 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
     {
       case OP_NOP:
       {
-        continue;
         cursor += 1;
       }
       break;
@@ -34,8 +33,39 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
             break;
           }
         }
-        lux_vm_call_function(vm, closure);
+        TRY(lux_vm_call_function(vm, closure));
         cursor += 2;
+      }
+      break;
+      case OP_MOV:
+      {
+        frame->r[*(unsigned char*)(cursor + 2)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue;
+        cursor += 3;
+      }
+      break;
+      case OP_ADDI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue + frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
+      case OP_SUBI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue - frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
+      case OP_MULI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue * frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
+      case OP_DIVI:
+      {
+        assert(frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue / frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
       }
       break;
       case OP_RET:
