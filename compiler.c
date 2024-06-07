@@ -198,6 +198,7 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsign
 
 static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
 {
+  lux_compiler_enter_scope(comp);
   TRY(lux_lexer_expect_token(comp->lex, '{'))
   while(true)
   {
@@ -208,8 +209,15 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
     {
       switch(*token.buf)
       {
+        case '{':
+        {
+          lux_lexer_unget_last_token(comp->lex);
+          TRY(lux_compiler_scope(comp, closure))
+        }
+        continue;
         case '}':
         {
+          lux_compiler_leave_scope(comp);
           return true;
         }
         break;
@@ -461,7 +469,7 @@ bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, 
 
   cpvar_t* v = *var = &comp->vars[comp->vc];
   strncpy(v->name, name->buf, name->length);
-  v->name[127] = '\0';
+  v->name[name->length] = '\0';
   v->type = type;
   v->z = comp->z;
   lux_compiler_get_register(comp, &v->r);
@@ -485,10 +493,23 @@ cpvar_t* lux_compiler_get_var(compiler_t* comp, token_t* name)
 
 void lux_compiler_enter_scope(compiler_t* comp)
 {
-
+  comp->z++;
 }
 
 void lux_compiler_leave_scope(compiler_t* comp)
 {
-
+  comp->z--;
+  int n = 0;
+  for(int i = 0; i < comp->vc; i++)
+  {
+    if(comp->vars[i].z > comp->z)
+    {
+      lux_compiler_free_register(comp, comp->vars[i].r);
+    }
+    else
+    {
+      n++;
+    }
+  }
+  comp->vc = n;
 }
