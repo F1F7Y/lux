@@ -22,6 +22,8 @@ static unsigned char lux_instruction_for_operator_int(char operator)
   return OP_ADDI;
 }
 
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret);
+
 // Parses '+ 9' then calls itself
 static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool priority, unsigned char lv, unsigned char* ret)
 {
@@ -49,10 +51,23 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   token_t rvalue;
   lux_lexer_get_token(comp->lex, &rvalue);
 
-  if(rvalue.type != TT_INT)
+  unsigned char rv;
+  if(*rvalue.buf == '(')
+  {
+    TRY(lux_compiler_expression(comp, closure, &rv))
+    TRY(lux_lexer_expect_token(comp->lex, ')'))
+  }
+  else if(rvalue.type != TT_INT)
   {
     lux_vm_set_error_t(comp->vm, "Expected TT_INT for value '%s'", &rvalue);
     return false;
+  }
+  else
+  {
+    TRY(lux_compiler_get_register(comp, &rv))
+    lux_vm_closure_append_byte(closure, OP_LDI);
+    lux_vm_closure_append_byte(closure, rv);
+    lux_vm_closure_append_int(closure, rvalue.ivalue);
   }
 
   // Check if next operation has higer priority if so do it first
@@ -61,11 +76,6 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   lux_lexer_unget_last_token(comp->lex);
   if((*op.buf == '+' || *op.buf == '-') && (*nextop.buf == '*' || *nextop.buf == '/'))
   {
-    unsigned char rv;
-    TRY(lux_compiler_get_register(comp, &rv));
-    lux_vm_closure_append_byte(closure, OP_LDI);
-    lux_vm_closure_append_byte(closure, rv);
-    lux_vm_closure_append_int(closure, rvalue.ivalue);
     unsigned char rr;
     TRY(lux_compiler_expression_e(comp, closure, true, rv, &rr));
 
@@ -83,12 +93,6 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
     TRY(lux_compiler_expression_e(comp, closure, false, r, ret));
     return true;
   }
-
-  unsigned char rv;
-  TRY(lux_compiler_get_register(comp, &rv));
-  lux_vm_closure_append_byte(closure, OP_LDI);
-  lux_vm_closure_append_byte(closure, rv);
-  lux_vm_closure_append_int(closure, rvalue.ivalue);
 
   unsigned char rr;
   TRY(lux_compiler_get_register(comp, &rr));
@@ -131,17 +135,24 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsign
   token_t value;
   lux_lexer_get_token(comp->lex, &value);
 
-  if(value.type != TT_INT)
+  unsigned char vr;
+  if(*value.buf == '(')
+  {
+    TRY(lux_compiler_expression(comp, closure, &vr))
+    TRY(lux_lexer_expect_token(comp->lex, ')'))
+  }
+  else if(value.type != TT_INT)
   {
     lux_vm_set_error_t(comp->vm, "Expected TT_INT for value '%s'", &value);
     return false;
   }
-
-  unsigned char vr;
-  TRY(lux_compiler_get_register(comp, &vr))
-  lux_vm_closure_append_byte(closure, OP_LDI);
-  lux_vm_closure_append_byte(closure, vr);
-  lux_vm_closure_append_int(closure, value.ivalue);
+  else
+  {
+    TRY(lux_compiler_get_register(comp, &vr))
+    lux_vm_closure_append_byte(closure, OP_LDI);
+    lux_vm_closure_append_byte(closure, vr);
+    lux_vm_closure_append_int(closure, value.ivalue);
+  }
 
   token_t op;
   lux_lexer_get_token(comp->lex, &op);
