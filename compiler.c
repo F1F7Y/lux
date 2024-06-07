@@ -7,6 +7,9 @@ void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
 {
   comp->vm = vm;
   comp->lex = lex;
+  lux_compiler_clear_registers(comp);
+  comp->z = 0;
+  comp->vc = 0;
 }
 
 static unsigned char lux_instruction_for_operator_int(char operator)
@@ -57,10 +60,18 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
     TRY(lux_compiler_expression(comp, closure, &rv))
     TRY(lux_lexer_expect_token(comp->lex, ')'))
   }
-  else if(rvalue.type != TT_INT)
+  else if(rvalue.type == TT_NAME)
   {
-    lux_vm_set_error_t(comp->vm, "Expected TT_INT for value '%s'", &rvalue);
-    return false;
+    cpvar_t* var = lux_compiler_get_var(comp, &rvalue);
+    if(var)
+    {
+      rv = var->r;
+    }
+    else
+    {
+      lux_vm_set_error_t(comp->vm, "Unknown variable '%s'", &rvalue);
+      return false;
+    }
   }
   else
   {
@@ -141,10 +152,18 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsign
     TRY(lux_compiler_expression(comp, closure, &vr))
     TRY(lux_lexer_expect_token(comp->lex, ')'))
   }
-  else if(value.type != TT_INT)
+  else if(value.type == TT_NAME)
   {
-    lux_vm_set_error_t(comp->vm, "Expected TT_INT for value '%s'", &value);
-    return false;
+    cpvar_t* var = lux_compiler_get_var(comp, &value);
+    if(var)
+    {
+      vr = var->r;
+    }
+    else
+    {
+      lux_vm_set_error_t(comp->vm, "Unknown variable '%s'", &value);
+      return false;
+    }
   }
   else
   {
@@ -240,7 +259,9 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
       {
         token_t name;
         lux_lexer_get_token(comp->lex, &name);
-        // verify this
+
+        cpvar_t* var;
+        TRY(lux_compiler_register_var(comp, t, &name, &var))
 
         token_t peek;
         lux_lexer_get_token(comp->lex, &peek);
@@ -248,6 +269,12 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         {
           unsigned char retvalue;
           TRY(lux_compiler_expression(comp, closure, &retvalue));
+
+          lux_vm_closure_append_byte(closure, OP_MOV);
+          lux_vm_closure_append_byte(closure, retvalue);
+          lux_vm_closure_append_byte(closure, var->r);
+
+          lux_compiler_free_register(comp, retvalue);
         }
         else
         {
@@ -381,7 +408,9 @@ void lux_compiler_clear_registers(compiler_t* comp)
 
 bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg)
 {
-  for(int i = 1; i < 256; i++)
+  // r0 is return values
+  // r1 - 12 is func args
+  for(int i = 1 + 12; i < 256; i++)
   {
     if(!comp->r[i])
     {
@@ -397,4 +426,69 @@ bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg)
 void lux_compiler_free_register(compiler_t* comp, unsigned char reg)
 {
   comp->r[reg] = false;
+}
+
+bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, cpvar_t** var)
+{
+  for(int i = 0; i < comp->vc; i++)
+  {
+    if(!strncmp(comp->vars[i].name, name->buf, name->length) && strlen(comp->vars[i].name) == name->length)
+    {
+      lux_vm_set_error_t(comp->vm, "Variable %s already exists", name);
+      return false;
+    }
+  }
+  for(closure_t *c = comp->vm->functions; c != NULL; c = c->next)
+  {
+    if(!strncmp(c->name, name->buf, name->length) && strlen(c->name) == name->length)
+    {
+      lux_vm_set_error_t(comp->vm, "Variable %s cant share a name with a function of the same name", name);
+      return false;
+    }
+  }
+  
+  if(comp->vc == 128)
+  {
+    lux_vm_set_error(comp->vm, "Maximum allowed number of local variables is 128");
+    return false;
+  }
+
+  if(name->length > 127)
+  {
+    lux_vm_set_error(comp->vm, "A variable name can be up to 128 bytes");
+    return false;
+  }
+
+  cpvar_t* v = *var = &comp->vars[comp->vc];
+  strncpy(v->name, name->buf, name->length);
+  v->name[127] = '\0';
+  v->type = type;
+  v->z = comp->z;
+  lux_compiler_get_register(comp, &v->r);
+  comp->vc++;
+
+  return true;
+}
+
+cpvar_t* lux_compiler_get_var(compiler_t* comp, token_t* name)
+{
+  for(int i = 0; i < comp->vc; i++)
+  {
+    if(!strncmp(comp->vars[i].name, name->buf, name->length) && strlen(comp->vars[i].name) == name->length)
+    {
+      return &comp->vars[i];
+    }
+  }
+
+  return NULL;
+}
+
+void lux_compiler_enter_scope(compiler_t* comp)
+{
+
+}
+
+void lux_compiler_leave_scope(compiler_t* comp)
+{
+
 }

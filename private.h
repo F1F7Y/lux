@@ -22,13 +22,25 @@ enum
 
 typedef struct lexer_s lexer_t;
 typedef struct compiler_s compiler_t;
+typedef struct token_s token_t;
 
 /* compiler.c */
+typedef struct cpvar_s
+{
+  char name[128];
+  vmtype_t* type;
+  unsigned char r;
+  int z;
+} cpvar_t;
+
 typedef struct compiler_s
 {
   vm_t* vm;     // vm that owns us
   lexer_t* lex; // Lexer for the file we're compiling
   bool r[256];  // Keeps track of in use registers
+  int z;        // Counts nested scopes
+  cpvar_t vars[128]; // Local vars;
+  int vc;       // Number of vars
 } compiler_t;
 
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex);
@@ -36,6 +48,11 @@ bool lux_compiler_compile_file(compiler_t* comp);
 void lux_compiler_clear_registers(compiler_t* comp);
 bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg);
 void lux_compiler_free_register(compiler_t* comp, unsigned char reg);
+
+bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, cpvar_t** var);
+cpvar_t* lux_compiler_get_var(compiler_t* comp, token_t* name);
+void lux_compiler_enter_scope(compiler_t* comp);
+void lux_compiler_leave_scope(compiler_t* comp);
 
 /* lexer.c */
 enum
