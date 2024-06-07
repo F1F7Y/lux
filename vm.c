@@ -42,7 +42,7 @@ closure_t* lux_vm_get_function(vm_t* vm, const char* name)
   return NULL;
 }
 
-bool lux_vm_call_function(vm_t* vm, closure_t* func)
+bool lux_vm_call_function(vm_t* vm, closure_t* func, vmregister_t* ret)
 {
   printf("Calling %s\n", func->name);
   vmframe_t frame;
@@ -52,6 +52,7 @@ bool lux_vm_call_function(vm_t* vm, closure_t* func)
   vm->frames = &frame;
   TRY(lux_vm_interpret_frame(vm, &frame))
   vm->frames = frame.next;
+  *ret = frame.r[0];
   return true;
 }
 

@@ -99,12 +99,6 @@ typedef struct closure_s
   closure_t* next;
 } closure_t;
 
-typedef union vmregister_u
-{
-  int ivalue;
-  float fvalue;
-} vmregister_t;
-
 typedef struct vmframe_s
 {
   vm_t* vm;

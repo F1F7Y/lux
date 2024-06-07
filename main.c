@@ -59,10 +59,12 @@ int main(int argc, char* argv[])
   }
 
   printf("Running 'main'\n");
-  if(!lux_vm_call_function(&vm, fp))
+  vmregister_t ret;
+  if(!lux_vm_call_function(&vm, fp, &ret))
   {
     printf("Error running code: %s\n", vm.lasterror);
   }
+  printf("main returned: %d\n", ret.ivalue);
 #endif
   return 0;
 }
