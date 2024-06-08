@@ -36,43 +36,61 @@ void lux_debug_dump_code(closure_t* closure)
       break;
       case OP_LDI:
       {
-        printf("ldi    %d %d  // %f\n", *(unsigned char*)(cursor + 1), *(int*)(cursor + 2), *(float*)(cursor + 2));
+        const unsigned char to = *(unsigned char*)(cursor + 1);
+        const int ivalue = *(int*)(cursor + 2);
+        const float fvalue = *(float*)(cursor + 2);
+        printf("ldi    %d %d  // r[%d] <- %d // %f\n", to, ivalue, to, ivalue, fvalue);
         cursor += 6;
       }
       break;
       case OP_CALL:
       {
-        printf("call   %d\n", *(unsigned char*)(cursor + 1));
+        const unsigned char idx = *(unsigned char*)(cursor + 1);
+        printf("call   %d  // call r[%d]\n", idx, idx);
         cursor += 2;
       }
       break;
       case OP_MOV:
       {
-        printf("mov    %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2));
+        const unsigned char from = *(unsigned char*)(cursor + 1);
+        const unsigned char to = *(unsigned char*)(cursor + 2);
+        printf("mov    %d %d  // r[%d] <- r[%d]\n", from, to, to, from);
         cursor += 3;
       }
       break;
       case OP_ADDI:
       {
-        printf("addi   %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("addi   %d %d %d  // r[%d] = r[%d] + r[%d]\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
       case OP_SUBI:
       {
-        printf("subi   %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("subi   %d %d %d  // r[%d] = r[%d] - r[%d]\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
       case OP_MULI:
       {
-        printf("muli   %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("muli   %d %d %d  // r[%d] = r[%d] * r[%d]\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
       case OP_DIVI:
       {
-        printf("divi   %d %d %d\n", *(unsigned char*)(cursor + 1), *(unsigned char*)(cursor + 2), *(unsigned char*)(cursor + 3));
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("divi   %d %d %d  // r[%d] = r[%d] / r[%d]\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
