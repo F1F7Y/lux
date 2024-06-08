@@ -291,6 +291,20 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         }
         continue;
       }
+
+      cpvar_t* v = lux_compiler_get_var(comp, &token);
+      if(v != NULL)
+      {
+        TRY(lux_lexer_expect_token(comp->lex, '='))
+        unsigned char retvalue;
+        TRY(lux_compiler_expression(comp, closure, &retvalue))
+
+        lux_vm_closure_append_byte(closure, OP_MOV);
+        lux_vm_closure_append_byte(closure, retvalue);
+        lux_vm_closure_append_byte(closure, v->r);
+
+        continue;
+      }
     }
 
     lux_vm_set_error_t(comp->vm, "Unexpected token: %s", &token);
