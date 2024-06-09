@@ -4,12 +4,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-bool lux_vm_init(vm_t* vm)
+bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 {
   memset(vm->lasterror, 0, 256);
   vm->types = NULL;
   vm->functions = NULL;
   vm->frames = NULL;
+
+  if(memsize < sizeof(xmemchunk_t))
+  {
+    return false;
+  }
+
+  xmemchunk_t* chunk = vm->freemem = (xmemchunk_t*)mem;
+  chunk->size = memsize - sizeof(xmemchunk_t);
+  chunk->next = NULL;
+
   (void)lux_vm_register_type(vm, "void",  false);
   (void)lux_vm_register_type(vm, "int",   true);
   (void)lux_vm_register_type(vm, "float", true);
@@ -64,7 +74,7 @@ bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
     return false;
   }
 
-  vmtype_t* t = malloc(sizeof(*t));
+  vmtype_t* t = xalloc(vm, sizeof(*t));
   strncpy(t->name, type, 128);
   t->name[127] = '\0';
   t->next = vm->types;
@@ -106,7 +116,7 @@ closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rett
     return NULL;
   }
 
-  closure_t* fp = malloc(sizeof(closure_t));
+  closure_t* fp = xalloc(vm, sizeof(closure_t));
   strncpy(fp->name, name, 128);
   fp->name[127] = '\0';
   fp->native = false;
@@ -169,7 +179,7 @@ closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
   return NULL;
 }
 
-static void lux_vm_closure_ensure_free(closure_t* closure, int size)
+static void lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
 {
   if(closure->allocated - closure->used > size)
   {
@@ -178,37 +188,37 @@ static void lux_vm_closure_ensure_free(closure_t* closure, int size)
 
   if(closure->code == NULL)
   {
-    closure->code = malloc(8);
+    closure->code = xalloc(vm, 8);
     closure->allocated = 8;
     return;
   }
 
   closure->allocated *= 2;
-  closure->code = realloc(closure->code, closure->allocated);
+  closure->code = xrealloc(vm, closure->code, closure->allocated);
 }
 
-void lux_vm_closure_append_byte(closure_t* closure, unsigned char byte)
+void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte)
 {
-  lux_vm_closure_ensure_free(closure, 1);
+  lux_vm_closure_ensure_free(vm, closure, 1);
   *(unsigned char*)(closure->code + closure->used) = byte;
   closure->used += 1;
 }
 
-void lux_vm_closure_append_int(closure_t* closure, int i)
+void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i)
 {
-  lux_vm_closure_ensure_free(closure, 4);
+  lux_vm_closure_ensure_free(vm, closure, 4);
   *(int*)(closure->code + closure->used) = i;
   closure->used += 4;
 }
 
-void lux_vm_closure_append_float(closure_t* closure, float f)
+void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f)
 {
-  lux_vm_closure_ensure_free(closure, 4);
+  lux_vm_closure_ensure_free(vm, closure, 4);
   *(float*)(closure->code + closure->used) = f;
   closure->used += 4;
 }
 
-bool lux_vm_closure_last_byte_is(closure_t* closure, char b)
+bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b)
 {
   if(closure->used == 0)
   {

@@ -133,10 +133,10 @@ closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype
 closure_t* lux_vm_get_function_s(vm_t* vm, const char* name);
 closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name);
 
-void lux_vm_closure_append_byte(closure_t* closure, unsigned char byte);
-void lux_vm_closure_append_int(closure_t* closure, int i);
-void lux_vm_closure_append_float(closure_t* closure, float f);
-bool lux_vm_closure_last_byte_is(closure_t* closure, char b);
+void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte);
+void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i);
+void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f);
+bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b);
 
 void lux_vm_set_error(vm_t* vm, char* error);
 void lux_vm_set_error_s(vm_t* vm, char* error, const char* str1);
@@ -151,5 +151,16 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame);
 /* debug.c */
 void lux_debug_dump_code_all(vm_t* vm);
 void lux_debug_dump_code(closure_t* closure);
+
+/* mem.c */
+typedef struct xmemchunk_s
+{
+  unsigned int size;
+  xmemchunk_t* next;
+} xmemchunk_t;
+
+void* xalloc(vm_t* vm, unsigned int size);
+void* xrealloc(vm_t* vm, void* ptr, unsigned int size);
+void  xfree(vm_t* vm, void* ptr);
 
 #endif

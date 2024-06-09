@@ -5,6 +5,8 @@
 #include "public.h"
 #include "private.h"
 
+#define MEMSIZE 2048
+
 int main(int argc, char* argv[])
 {
   if(argc < 2)
@@ -14,8 +16,10 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  void* mem = malloc(MEMSIZE);
+
   vm_t vm;
-  lux_vm_init(&vm);
+  lux_vm_init(&vm, mem, MEMSIZE);
   for(int i = 1 ; i < argc; i++)
   {
     const char* file = argv[i];
@@ -66,5 +70,38 @@ int main(int argc, char* argv[])
   }
   printf("main returned: %d\n", ret.ivalue);
 #endif
+  {
+    for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
+    {
+      printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
+    }
+
+    printf("alloc start\n");
+ 
+    void* ptrs[16];
+
+    for(int i = 0; i < 16; i++)
+    {
+      ptrs[i] = xalloc(&vm, 100);
+    }
+    for(int i = 0; i < 16; i++)
+    {
+      if(i % 5 == 0) continue;
+      xfree(&vm, ptrs[i]);
+    }
+
+    for(int i = 0; i < 16; i++)
+    {
+      if(i % 5 != 0) continue;
+      xfree(&vm, ptrs[i]);
+    }
+
+    printf("alloc end\n");
+
+    for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
+    {
+      printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
+    }
+  }
   return 0;
 }
