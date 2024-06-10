@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     fread(buf, size, 1, f);
     buf[size] = '\0';
     fclose(f);
-
+    
     if(!lux_vm_load(&vm, buf))
     {
       printf("Failed to compile %s with error: %s\n", file, vm.lasterror);

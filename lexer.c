@@ -105,8 +105,8 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
   if(*lex->cursor == '\0')
   {
     token->type = TT_EOF;
-    token->buf = lex->cursor;
-    token->length = 1;
+    token->buf = "<eof>";
+    token->length = 5;
     token->line = lex->line;
     token->column = lex->column;
     memcpy(&lex->lasttoken, token, sizeof(token_t));
@@ -117,40 +117,9 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
   if(*c == '/' && *(c+1) == '/')
   {
     for(; *c != '\n' && *c != '\r' && *c != '\0'; c++){}
-    for(; *c != '\0'; c++)
-    {
-      bool whitespace = false;
-      for(char* w = WHITESPACE; *w != '\0'; w++)
-      {
-        if(*c == *w)
-        {
-          lex->column++;
-          whitespace = true;
-          break;
-        }
-      }
-      if(*c == '\r')
-      {
-        if(*(c+1) == '\n')
-        {
-          c++;
-        }
-        lex->line++;
-        lex->column = 1;
-      }
-      else if(*c == '\n')
-      {
-        lex->line++;
-        lex->column = 1;
-      }
-      if(!whitespace)
-      {
-        break;
-      }
-    }
+    lex->cursor = c;
+    return lux_lexer_get_token(lex, token);
   }
-
-  lex->cursor = c;
 
   // Get token
   for(;; c++)
