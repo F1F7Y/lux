@@ -1,7 +1,9 @@
 #include "private.h"
 
 #include <stddef.h>
-#include <string.h> 
+#include <string.h>
+
+#define MINCHUNKMEM 32
 
 void* xalloc(vm_t* vm, unsigned int size)
 {
@@ -13,7 +15,7 @@ void* xalloc(vm_t* vm, unsigned int size)
   xmemchunk_t* l = NULL;
   for(xmemchunk_t* m = vm->freemem; m != NULL; m = m->next)
   {
-    if(m->size > size + sizeof(xmemchunk_t)) // Avalible size is larger than required, cut into 2
+    if(m->size > size + sizeof(xmemchunk_t) + MINCHUNKMEM) // Avalible size is larger than required, cut into 2
     {
       xmemchunk_t* n = (xmemchunk_t*)((char*)m + size + sizeof(xmemchunk_t)); 
       n->size = m->size - size - sizeof(xmemchunk_t);
@@ -63,20 +65,14 @@ void* xrealloc(vm_t* vm, void* ptr, unsigned int size)
 
   xmemchunk_t* p = (xmemchunk_t*)((char*)ptr - sizeof(xmemchunk_t));
 
-  void* nptr = xalloc(vm, size);
-  memcpy(nptr, ptr, p->size > size ? size : p->size);
-  xfree(vm, ptr);
-  return nptr;
-#if 0
-  // Check if we can simply expand this chunk
-  xmemchunk_t* l = NULL;
-  for(xmemchunk_t* m = vm->freemem; m != NULL; m = m->next)
+  if(size > p->size)
   {
-    if((xmemchunk_t*)((char*)m + m->size + sizeof(xmemchunk_t)) == p && m->size >= size)
+    // Try to expand or just realloc
+    xmemchunk_t* l = NULL;
+    for(xmemchunk_t* m = vm->freemem; m != NULL; m = m->next)
     {
-      if(p->size + sizeof(xmemchunk_t) + m->size - size < sizeof(xmemchunk_t)) // Consume the neighbour
+      if((xmemchunk_t*)((char*)p + p->size + sizeof(xmemchunk_t)) == m && m->size >= size)
       {
-        p->size += m->size + sizeof(xmemchunk_t);
         if(l != NULL)
         {
           l->next = m->next;
@@ -85,18 +81,46 @@ void* xrealloc(vm_t* vm, void* ptr, unsigned int size)
         {
           vm->freemem = m->next;
         }
+
+        if(p->size + sizeof(xmemchunk_t) + m->size - size > sizeof(xmemchunk_t) + MINCHUNKMEM)
+        {
+          xmemchunk_t* n = (xmemchunk_t*)((char*)p + sizeof(xmemchunk_t) + size);
+          n->size = p->size + m->size - size;
+          n->next = vm->freemem;
+          vm->freemem = n;
+          p->size = size;
+        }
+        else
+        {
+          p->size += sizeof(xmemchunk_t) + m->size;
+        }
+        return ptr;
       }
-      else // Split the neighbour
-      {
-        
-      }
-      return ptr;
+      l = m;
     }
-    l = m;
+
+    void* nptr = xalloc(vm, size);
+    memcpy(nptr, ptr, p->size > size ? size : p->size);
+    xfree(vm, ptr);
+    return nptr;
+  }
+  else if(size < p->size)
+  {
+    if(p->size - size > sizeof(xmemchunk_t) + MINCHUNKMEM)
+    {
+      xmemchunk_t* n = (xmemchunk_t*)((char*)p + sizeof(xmemchunk_t) + size);
+      n->next = NULL;
+      n->size = p->size - size - sizeof(xmemchunk_t);
+      xfree(vm, (void*)((char*)n + sizeof(xmemchunk_t)));
+      p->size = size;
+    }
+    return ptr;
+  }
+  else
+  {
+    return ptr;
   }
 
-  // Check if we can simpy expand the chunk otherwise alloc a new one and memcpy
-#endif
   return NULL;
 }
 

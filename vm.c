@@ -186,14 +186,8 @@ static void lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
     return;
   }
 
-  if(closure->code == NULL)
-  {
-    closure->code = xalloc(vm, 8);
-    closure->allocated = 8;
-    return;
-  }
+  closure->allocated += 32;
 
-  closure->allocated *= 2;
   closure->code = xrealloc(vm, closure->code, closure->allocated);
 }
 

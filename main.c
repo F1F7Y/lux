@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
   printf("main returned: %d\n", ret.ivalue);
 #endif
   {
+#if 0
     for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
     {
       printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
     }
 
     printf("alloc end\n");
-
+#endif
     for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
     {
       printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
