@@ -418,6 +418,7 @@ bool lux_compiler_compile_file(compiler_t* comp)
         lux_vm_closure_append_byte(comp->vm, closure, OP_RET);
       }
     }
+    lux_vm_closure_finish(comp->vm, closure);
   }
   return true;
 }

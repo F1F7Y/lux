@@ -186,7 +186,7 @@ static void lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
     return;
   }
 
-  closure->allocated += 32;
+  closure->allocated += 64;
 
   closure->code = xrealloc(vm, closure->code, closure->allocated);
 }
@@ -220,6 +220,12 @@ bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b)
   }
 
   return *(closure->code + closure->used - 1) == b;
+}
+
+void lux_vm_closure_finish(vm_t* vm, closure_t* closure)
+{
+  closure->allocated = closure->used;
+  closure->code = xrealloc(vm, closure->code, closure->allocated);
 }
 
 void lux_vm_set_error(vm_t* vm, char* error)

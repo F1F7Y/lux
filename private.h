@@ -137,6 +137,7 @@ void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte
 void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i);
 void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f);
 bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b);
+void lux_vm_closure_finish(vm_t* vm, closure_t* closure);
 
 void lux_vm_set_error(vm_t* vm, char* error);
 void lux_vm_set_error_s(vm_t* vm, char* error, const char* str1);
