@@ -20,6 +20,8 @@ typedef struct vm_s
 {
   char lasterror[256];
   vmtype_t* types;
+  vmtype_t* tint;   // Asigned to TT_INT tokens
+  vmtype_t* tfloat; // Asigned to TT_FLOAT tokens
   closure_t* functions;
   vmframe_t* frames;
 

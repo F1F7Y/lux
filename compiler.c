@@ -12,23 +12,82 @@ void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
   comp->vc = 0;
 }
 
-static unsigned char lux_instruction_for_operator_int(char operator)
+static unsigned char lux_instruction_for_operator(bool isint, char operator)
 {
-  switch(operator)
+  if(isint)
   {
-    case '+': return OP_ADDI;
-    case '-': return OP_SUBI;
-    case '*': return OP_MULI;
-    case '/': return OP_DIVI;
+    switch(operator)
+    {
+      case '+': return OP_ADDI;
+      case '-': return OP_SUBI;
+      case '*': return OP_MULI;
+      case '/': return OP_DIVI;
+    }
+  }
+  else
+  {
+    switch(operator)
+    {
+      case '+': return OP_ADDF;
+      case '-': return OP_SUBF;
+      case '*': return OP_MULF;
+      case '/': return OP_DIVF;
+    }
   }
   assert(false);
   return OP_ADDI;
 }
 
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret);
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype);
+
+static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token_t* value, unsigned char* ret, vmtype_t** rettype)
+{
+  if(*value->buf == '(')
+  {
+    TRY(lux_compiler_expression(comp, closure, ret, rettype))
+    TRY(lux_lexer_expect_token(comp->lex, ')'))
+  }
+  else if(value->type == TT_NAME)
+  {
+    cpvar_t* var = lux_compiler_get_var(comp, value);
+    if(var)
+    {
+      *ret = var->r;
+      *rettype = var->type;
+    }
+    else
+    {
+      lux_vm_set_error_t(comp->vm, "Unknown variable '%s'", value);
+      return false;
+    }
+  }
+  else if(value->type == TT_INT)
+  {
+    TRY(lux_compiler_alloc_register_generic(comp, ret))
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_int(comp->vm, closure, value->ivalue);
+    *rettype = comp->vm->tint;
+  }
+  else if(value->type == TT_FLOAT)
+  {
+    TRY(lux_compiler_alloc_register_generic(comp, ret))
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_float(comp->vm, closure, value->fvalue);
+    *rettype = comp->vm->tfloat;
+  }
+  else
+  {
+    lux_vm_set_error_t(comp->vm, "Failed to get value from: '%s'", value);
+    return false;
+  }
+
+  return true;
+}
 
 // Parses '+ 9' then calls itself
-static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool priority, unsigned char lv, unsigned char* ret)
+static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool priority, unsigned char lv, vmtype_t* ltype, unsigned char* ret, vmtype_t** rettype)
 {
   token_t op;
   lux_lexer_get_token(comp->lex, &op);
@@ -55,31 +114,8 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   lux_lexer_get_token(comp->lex, &rvalue);
 
   unsigned char rv;
-  if(*rvalue.buf == '(')
-  {
-    TRY(lux_compiler_expression(comp, closure, &rv))
-    TRY(lux_lexer_expect_token(comp->lex, ')'))
-  }
-  else if(rvalue.type == TT_NAME)
-  {
-    cpvar_t* var = lux_compiler_get_var(comp, &rvalue);
-    if(var)
-    {
-      rv = var->r;
-    }
-    else
-    {
-      lux_vm_set_error_t(comp->vm, "Unknown variable '%s'", &rvalue);
-      return false;
-    }
-  }
-  else
-  {
-    TRY(lux_compiler_get_register(comp, &rv))
-    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
-    lux_vm_closure_append_byte(comp->vm, closure, rv);
-    lux_vm_closure_append_int(comp->vm, closure, rvalue.ivalue);
-  }
+  vmtype_t* rvtype;
+  TRY(lux_compiler_parse_value(comp, closure, &rvalue, &rv, &rvtype))
 
   // Check if next operation has higer priority if so do it first
   token_t nextop;
@@ -88,35 +124,49 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   if((*op.buf == '+' || *op.buf == '-') && (*nextop.buf == '*' || *nextop.buf == '/'))
   {
     unsigned char rr;
-    TRY(lux_compiler_expression_e(comp, closure, true, rv, &rr));
-
+    vmtype_t* rtype;
+    TRY(lux_compiler_expression_e(comp, closure, true, rv, rvtype, &rr, &rtype));
+    
     unsigned char r;
-    TRY(lux_compiler_get_register(comp, &r));
+    TRY(lux_compiler_alloc_register_generic(comp, &r));
 
-    lux_vm_closure_append_byte(comp->vm, closure, lux_instruction_for_operator_int(*op.buf));
+    if(ltype != rtype)
+    {
+      lux_vm_set_error_ss(comp->vm, "Incompatible types: '%s' '%s'", ltype->name, rtype->name);
+      return false;
+    }
+
+    lux_vm_closure_append_byte(comp->vm, closure, lux_instruction_for_operator(ltype == comp->vm->tint, *op.buf));
     lux_vm_closure_append_byte(comp->vm, closure, lv);
     lux_vm_closure_append_byte(comp->vm, closure, rr);
     lux_vm_closure_append_byte(comp->vm, closure, r);
 
-    lux_compiler_free_register(comp, lv);
-    lux_compiler_free_register(comp, rr);
+    lux_compiler_free_register_generic(comp, lv);
+    lux_compiler_free_register_generic(comp, rr);
 
-    TRY(lux_compiler_expression_e(comp, closure, false, r, ret));
+    TRY(lux_compiler_expression_e(comp, closure, false, r, rtype, ret, rettype));
     return true;
   }
 
-  unsigned char rr;
-  TRY(lux_compiler_get_register(comp, &rr));
+  if(ltype != rvtype)
+  {
+    lux_vm_set_error_ss(comp->vm, "Incompatible types: '%s' '%s'", ltype->name, rvtype->name);
+    return false;
+  }
 
-  lux_vm_closure_append_byte(comp->vm, closure, lux_instruction_for_operator_int(*op.buf));
+  unsigned char rr;
+  TRY(lux_compiler_alloc_register_generic(comp, &rr));
+
+  lux_vm_closure_append_byte(comp->vm, closure, lux_instruction_for_operator(ltype == comp->vm->tint, *op.buf));
   lux_vm_closure_append_byte(comp->vm, closure, lv);
   lux_vm_closure_append_byte(comp->vm, closure, rv);
   lux_vm_closure_append_byte(comp->vm, closure, rr);
 
-  lux_compiler_free_register(comp, lv);
-  lux_compiler_free_register(comp, rv);
+  lux_compiler_free_register_generic(comp, lv);
+  lux_compiler_free_register_generic(comp, rv);
 
   *ret = rr;
+  *rettype = ltype;
 
   lux_lexer_get_token(comp->lex, &op);
   lux_lexer_unget_last_token(comp->lex);
@@ -127,7 +177,7 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
     case '*':
     case '/':
     {
-      TRY(lux_compiler_expression_e(comp, closure, priority, rr, ret))
+      TRY(lux_compiler_expression_e(comp, closure, priority, rr, ltype, ret, rettype))
     }
     break;
     default:
@@ -141,37 +191,14 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
 
 
 // Parses initial number then calls lux_compiler_expression_e
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret)
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype)
 {
   token_t value;
   lux_lexer_get_token(comp->lex, &value);
 
   unsigned char vr;
-  if(*value.buf == '(')
-  {
-    TRY(lux_compiler_expression(comp, closure, &vr))
-    TRY(lux_lexer_expect_token(comp->lex, ')'))
-  }
-  else if(value.type == TT_NAME)
-  {
-    cpvar_t* var = lux_compiler_get_var(comp, &value);
-    if(var)
-    {
-      vr = var->r;
-    }
-    else
-    {
-      lux_vm_set_error_t(comp->vm, "Unknown variable '%s'", &value);
-      return false;
-    }
-  }
-  else
-  {
-    TRY(lux_compiler_get_register(comp, &vr))
-    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
-    lux_vm_closure_append_byte(comp->vm, closure, vr);
-    lux_vm_closure_append_int(comp->vm, closure, value.ivalue);
-  }
+  vmtype_t* vrtype;
+  TRY(lux_compiler_parse_value(comp, closure, &value, &vr, &vrtype))
 
   token_t op;
   lux_lexer_get_token(comp->lex, &op);
@@ -183,12 +210,13 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsign
     case '*':
     case '/':
     {
-      TRY(lux_compiler_expression_e(comp, closure, false, vr, ret))
+      TRY(lux_compiler_expression_e(comp, closure, false, vr, vrtype, ret, rettype))
     }
     break;
     default:
     {
       *ret = vr;
+      *rettype = vrtype;
       return true;
     }
   }
@@ -230,13 +258,20 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         if(closure->rettype->can_be_variable)
         {
           unsigned char retvalue;
-          TRY(lux_compiler_expression(comp, closure, &retvalue));
+          vmtype_t* rettype;
+          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype));
+
+          if(rettype != closure->rettype)
+          {
+            lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
+            return false;
+          }
 
           lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
           lux_vm_closure_append_byte(comp->vm, closure, retvalue);
           lux_vm_closure_append_byte(comp->vm, closure, 0);
 
-          lux_compiler_free_register(comp, retvalue);
+          lux_compiler_free_register_generic(comp, retvalue);
         }
         lux_vm_closure_append_byte(comp->vm, closure, OP_RET);
         continue;
@@ -276,13 +311,20 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         if(peek.length == 1 && *peek.buf == '=')
         {
           unsigned char retvalue;
-          TRY(lux_compiler_expression(comp, closure, &retvalue));
+          vmtype_t* rettype;
+          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype));
+
+          if(rettype != var->type)
+          {
+            lux_vm_set_error_ss(comp->vm, "Can't assign '%s' to variable of type '%s'", rettype->name, var->type->name);
+            return false;
+          }
 
           lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
           lux_vm_closure_append_byte(comp->vm, closure, retvalue);
           lux_vm_closure_append_byte(comp->vm, closure, var->r);
 
-          lux_compiler_free_register(comp, retvalue);
+          lux_compiler_free_register_generic(comp, retvalue);
         }
         else
         {
@@ -297,7 +339,14 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
       {
         TRY(lux_lexer_expect_token(comp->lex, '='))
         unsigned char retvalue;
-        TRY(lux_compiler_expression(comp, closure, &retvalue))
+        vmtype_t* rettype;
+        TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype))
+        
+        if(rettype != v->type)
+        {
+          lux_vm_set_error_ss(comp->vm, "Can't assign '%s' to variable of type '%s'", rettype->name, v->type->name);
+          return false;
+        }
 
         lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
         lux_vm_closure_append_byte(comp->vm, closure, retvalue);
@@ -425,19 +474,19 @@ bool lux_compiler_compile_file(compiler_t* comp)
 
 void lux_compiler_clear_registers(compiler_t* comp)
 {
-  memset(comp->r, 0, sizeof(bool) * 256);
+  memset(comp->r, 0, sizeof(int) * 256);
   comp->r[0] = true;
 }
 
-bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg)
+bool lux_compiler_alloc_register_generic(compiler_t* comp, unsigned char* reg)
 {
   // r0 is return values
   // r1 - 12 is func args
   for(int i = 1 + 12; i < 256; i++)
   {
-    if(!comp->r[i])
+    if(comp->r[i] == RS_NOT_USED)
     {
-      comp->r[i] = true;
+      comp->r[i] = RS_GENERIC;
       *reg = i;
       return true;
     }
@@ -446,9 +495,37 @@ bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg)
   return false;
 }
 
-void lux_compiler_free_register(compiler_t* comp, unsigned char reg)
+bool lux_compiler_alloc_register_variable(compiler_t* comp, unsigned char* reg)
 {
-  comp->r[reg] = false;
+  // r0 is return values
+  // r1 - 12 is func args
+  for(int i = 1 + 12; i < 256; i++)
+  {
+    if(comp->r[i] == RS_NOT_USED)
+    {
+      comp->r[i] = RS_VARIABLE;
+      *reg = i;
+      return true;
+    }
+  }
+  lux_vm_set_error(comp->vm, "Compiler ran out of registers");
+  return false;
+}
+
+void lux_compiler_free_register_generic(compiler_t* comp, unsigned char reg)
+{
+  if(comp->r[reg] == RS_GENERIC)
+  {
+    comp->r[reg] = RS_NOT_USED;
+  }
+}
+
+void lux_compiler_free_register_variable(compiler_t* comp, unsigned char reg)
+{
+  if(comp->r[reg] == RS_VARIABLE)
+  {
+    comp->r[reg] = RS_NOT_USED;
+  }
 }
 
 bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, cpvar_t** var)
@@ -487,7 +564,7 @@ bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, 
   v->name[name->length] = '\0';
   v->type = type;
   v->z = comp->z;
-  lux_compiler_get_register(comp, &v->r);
+  TRY(lux_compiler_alloc_register_variable(comp, &v->r))
   comp->vc++;
 
   return true;
@@ -519,7 +596,7 @@ void lux_compiler_leave_scope(compiler_t* comp)
   {
     if(comp->vars[i].z > comp->z)
     {
-      lux_compiler_free_register(comp, comp->vars[i].r);
+      lux_compiler_free_register_variable(comp, comp->vars[i].r);
     }
     else
     {

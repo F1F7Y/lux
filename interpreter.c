@@ -70,8 +70,44 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
       break;
       case OP_RET:
       {
-        printf("Function %s returning %d\n", frame->closure->name, frame->r[0]);
+        printf("Function %s returning %d (%f)\n", frame->closure->name, frame->r[0].ivalue, frame->r[0].fvalue);
         return true;
+      }
+      break;case OP_ITOF:
+      {
+        frame->r[*(unsigned char*)(cursor + 2)].fvalue = (float)frame->r[*(unsigned char*)(cursor + 1)].ivalue;
+        cursor += 3;
+      }
+      break;
+      case OP_ADDF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = frame->r[*(unsigned char*)(cursor + 1)].fvalue + frame->r[*(unsigned char*)(cursor + 2)].fvalue;
+        cursor += 4;
+      }
+      break;
+      case OP_SUBF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = frame->r[*(unsigned char*)(cursor + 1)].fvalue - frame->r[*(unsigned char*)(cursor + 2)].fvalue;
+        cursor += 4;
+      }
+      break;
+      case OP_MULF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = frame->r[*(unsigned char*)(cursor + 1)].fvalue * frame->r[*(unsigned char*)(cursor + 2)].fvalue;
+        cursor += 4;
+      }
+      break;
+      case OP_DIVF:
+      {
+        assert(frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = frame->r[*(unsigned char*)(cursor + 1)].fvalue / frame->r[*(unsigned char*)(cursor + 2)].fvalue;
+        cursor += 4;
+      }
+      break;
+      case OP_FTOI:
+      {
+        frame->r[*(unsigned char*)(cursor + 2)].ivalue = (int)frame->r[*(unsigned char*)(cursor + 1)].fvalue;
+        cursor += 3;
       }
       break;
       default:

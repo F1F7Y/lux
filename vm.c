@@ -24,6 +24,10 @@ bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
   (void)lux_vm_register_type(vm, "int",   true);
   (void)lux_vm_register_type(vm, "float", true);
   (void)lux_vm_register_type(vm, "bool",  true);
+
+  vm->tint = lux_vm_get_type_s(vm, "int");
+  vm->tfloat = lux_vm_get_type_s(vm, "float");
+
   return true;
 }
 
@@ -73,7 +77,6 @@ bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
     lux_vm_set_error_s(vm, "Tried to re-register type: '%s'", type);
     return false;
   }
-
   vmtype_t* t = xalloc(vm, sizeof(*t));
   strncpy(t->name, type, 128);
   t->name[127] = '\0';

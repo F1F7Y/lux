@@ -7,6 +7,10 @@
 
 #define TRY(exp) if(!exp) {return false;}
 
+/*
+ * Instructions are variable sized always being at least 1 byte
+ * General rule is the result is always stored in the last register
+*/
 enum
 {            // Size |                      | Usage
   OP_NOP,    // 1    | <1op>                | No operation
@@ -15,9 +19,15 @@ enum
   OP_RET,    // 1    | <1op>                | Return from function
   OP_MOV,    // 3    | <1op,1reg,1reg>      | Move value of register
   OP_ADDI,   // 4    | <1op,1reg,1reg,1reg> | Add two integers
-  OP_SUBI,   // 4    | <1op,1reg,1reg,1reg> | Substract two integers
+  OP_SUBI,   // 4    | <1op,1reg,1reg,1reg> | Subtract two integers
   OP_MULI,   // 4    | <1op,1reg,1reg,1reg> | Multiply two integers
   OP_DIVI,   // 4    | <1op,1reg,1reg,1reg> | Divide two integers
+  OP_ITOF,   // 3    | <1op,1reg,1reg>      | Cast an int to a float
+  OP_ADDF,   // 4    | <1op,1reg,1reg,1reg> | Add two floats
+  OP_SUBF,   // 4    | <1op,1reg,1reg,1reg> | Subtract two floats
+  OP_MULF,   // 4    | <1op,1reg,1reg,1reg> | Multiply two floats
+  OP_DIVF,   // 4    | <1op,1reg,1reg,1reg> | Divide two floats
+  OP_FTOI,   // 3    | <1op,1reg,1reg>      | Cast a float to an int
 };
 
 typedef struct lexer_s lexer_t;
@@ -33,11 +43,18 @@ typedef struct cpvar_s
   int z;
 } cpvar_t;
 
+enum
+{
+  RS_NOT_USED, // Register isn't being used
+  RS_VARIABLE, // Register is used by a variable
+  RS_GENERIC,  // Register is used for generic operations
+};
+
 typedef struct compiler_s
 {
   vm_t* vm;     // vm that owns us
   lexer_t* lex; // Lexer for the file we're compiling
-  bool r[256];  // Keeps track of in use registers
+  int r[256];  // Keeps track of in use registers
   int z;        // Counts nested scopes
   cpvar_t vars[128]; // Local vars;
   int vc;       // Number of vars
@@ -45,9 +62,12 @@ typedef struct compiler_s
 
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex);
 bool lux_compiler_compile_file(compiler_t* comp);
+
 void lux_compiler_clear_registers(compiler_t* comp);
-bool lux_compiler_get_register(compiler_t* comp, unsigned char* reg);
-void lux_compiler_free_register(compiler_t* comp, unsigned char reg);
+bool lux_compiler_alloc_register_generic(compiler_t* comp, unsigned char* reg);
+bool lux_compiler_alloc_register_variable(compiler_t* comp, unsigned char* reg);
+void lux_compiler_free_register_generic(compiler_t* comp, unsigned char reg);
+void lux_compiler_free_register_variable(compiler_t* comp, unsigned char reg);
 
 bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, cpvar_t** var);
 cpvar_t* lux_compiler_get_var(compiler_t* comp, token_t* name);
