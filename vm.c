@@ -56,9 +56,27 @@ closure_t* lux_vm_get_function(vm_t* vm, const char* name)
   return NULL;
 }
 
+bool lux_vm_call_function_internal(vm_t* vm, closure_t* func, vmframe_t* frame)
+{
+  printf("Calling %s internal\n", func->name);
+  vmframe_t newframe;
+  newframe.vm = vm;
+  newframe.closure = func;
+  newframe.next = vm->frames;
+  vm->frames = &newframe;
+  for(int i = 0; i < func->numargs; i++)
+  {
+    newframe.r[i + 1] = frame->r[i + 1];
+  }
+  TRY(lux_vm_interpret_frame(vm, &newframe))
+  vm->frames = newframe.next;
+  frame->r[0] = newframe.r[0];
+  return true;
+}
+
 bool lux_vm_call_function(vm_t* vm, closure_t* func, vmregister_t* ret)
 {
-  printf("Calling %s\n", func->name);
+  printf("Calling %s public\n", func->name);
   vmframe_t frame;
   frame.vm = vm;
   frame.closure = func;
@@ -124,6 +142,7 @@ closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rett
   fp->name[127] = '\0';
   fp->native = false;
   fp->rettype = rettype;
+  //fp->numargs = 0;
   fp->code = NULL;
   fp->used = 0;
   fp->allocated = 0;

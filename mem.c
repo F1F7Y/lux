@@ -100,6 +100,10 @@ void* xrealloc(vm_t* vm, void* ptr, unsigned int size)
     }
 
     void* nptr = xalloc(vm, size);
+    if(nptr == NULL)
+    {
+      return NULL;
+    }
     memcpy(nptr, ptr, p->size > size ? size : p->size);
     xfree(vm, ptr);
     return nptr;

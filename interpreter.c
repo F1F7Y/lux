@@ -33,7 +33,7 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
             break;
           }
         }
-        TRY(lux_vm_call_function(vm, closure, &frame->r[0]));
+        TRY(lux_vm_call_function_internal(vm, closure, frame));
         cursor += 2;
       }
       break;

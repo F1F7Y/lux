@@ -5,7 +5,7 @@
 #include "public.h"
 #include "private.h"
 
-#define MEMSIZE 2048
+#define MEMSIZE 4096
 
 int main(int argc, char* argv[])
 {

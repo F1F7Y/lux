@@ -12,7 +12,16 @@ void lux_debug_dump_code_all(vm_t* vm)
 
 void lux_debug_dump_code(closure_t* closure)
 {
-  printf("Dumping closure: %s %s() (index: %d)\n", closure->rettype->name, closure->name, closure->index);
+  printf("Dumping closure: %s %s(", closure->rettype->name, closure->name);
+  for(int i = 0; i < closure->numargs; i++)
+  {
+    printf("%s", closure->args[i]->name);
+    if(i < closure->numargs - 1)
+    {
+      printf(", ");
+    }
+  }
+  printf(") (index: %d)\n", closure->index);
   if(closure->code == NULL)
   {
     printf("Closure has no code\n");

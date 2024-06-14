@@ -40,6 +40,37 @@ static unsigned char lux_instruction_for_operator(bool isint, char operator)
 
 static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype);
 
+static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, closure_t* called)
+{
+  TRY(lux_lexer_expect_token(comp->lex, '('))
+  for(int i = 0; i < called->numargs; i++)
+  {
+    vmtype_t* argtype;
+    unsigned char reg;
+    TRY(lux_compiler_expression(comp, closure, &reg, &argtype))
+    
+    if(argtype != called->args[i])
+    {
+      lux_vm_set_error_ss(comp->vm, "Function expected argument of type %s, got %s instead", called->args[i]->name, argtype->name);
+      return false;
+    }
+
+    lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
+    lux_vm_closure_append_byte(comp->vm, closure, reg);
+    lux_vm_closure_append_byte(comp->vm, closure, i + 1);
+
+    lux_compiler_free_register_generic(comp, reg);
+
+    if(i < called->numargs - 1)
+    {
+      TRY(lux_lexer_expect_token(comp->lex, ','))
+    }
+  }
+  TRY(lux_lexer_expect_token(comp->lex, ')'))
+
+  return true;
+}
+
 static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token_t* value, unsigned char* ret, vmtype_t** rettype)
 {
   if(*value->buf == '(')
@@ -61,8 +92,7 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
     closure_t* c = lux_vm_get_function_t(comp->vm, value);
     if(c)
     {
-      TRY(lux_lexer_expect_token(comp->lex, '('))
-      TRY(lux_lexer_expect_token(comp->lex, ')'))
+      TRY(lux_compiler_function_call(comp, closure, c))
 
       lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
       lux_vm_closure_append_byte(comp->vm, closure, 0);
@@ -306,8 +336,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
       closure_t* f = lux_vm_get_function_t(comp->vm, &token);
       if(f != NULL)
       {
-        TRY(lux_lexer_expect_token(comp->lex, '('));
-        TRY(lux_lexer_expect_token(comp->lex, ')'));
+        TRY(lux_compiler_function_call(comp, closure, f))
 
         if(f->rettype->can_be_variable)
         {
@@ -395,6 +424,8 @@ bool lux_compiler_compile_file(compiler_t* comp)
   token_t dummy;
   while(lux_lexer_get_token(comp->lex, &dummy) != TT_EOF)
   {
+    lux_compiler_clear_registers(comp);
+    
     lux_lexer_unget_last_token(comp->lex);
     token_t rettype;
     lux_lexer_get_token(comp->lex, &rettype);
@@ -430,6 +461,8 @@ bool lux_compiler_compile_file(compiler_t* comp)
     closure_t* closure = lux_vm_register_function_t(comp->vm, &name, t);
     TRY(closure);
 
+    lux_compiler_enter_scope(comp);
+
     TRY(lux_lexer_expect_token(comp->lex, '('))
     bool read_function_args = !lux_lexer_expect_token(comp->lex, ')');
     if(read_function_args)
@@ -464,6 +497,21 @@ bool lux_compiler_compile_file(compiler_t* comp)
       token_t name;
       lux_lexer_get_token(comp->lex, &name);
 
+      cpvar_t* var;
+      TRY(lux_compiler_register_var(comp, vt, &name, &var))
+      if(closure->numargs > 12)
+      {
+        lux_vm_set_error(comp->vm, "A function can only have up to 12 arguments");
+        return false;
+      }
+      
+      closure->args[closure->numargs] = vt;
+      closure->numargs++;
+
+      lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
+      lux_vm_closure_append_byte(comp->vm, closure, closure->numargs);
+      lux_vm_closure_append_byte(comp->vm, closure, var->r);
+
       if(lux_lexer_expect_token(comp->lex, ')'))
       {
         break;
@@ -478,7 +526,6 @@ bool lux_compiler_compile_file(compiler_t* comp)
       lux_lexer_unget_last_token(comp->lex);
     }
 
-    lux_compiler_clear_registers(comp);
     TRY(lux_compiler_scope(comp, closure));
 
     if(!lux_vm_closure_last_byte_is(comp->vm, closure, OP_RET))
@@ -494,6 +541,7 @@ bool lux_compiler_compile_file(compiler_t* comp)
       }
     }
     lux_vm_closure_finish(comp->vm, closure);
+    lux_compiler_leave_scope(comp);
   }
   return true;
 }

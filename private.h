@@ -129,6 +129,8 @@ typedef struct closure_s
   char name[128];
   bool native;
   vmtype_t* rettype;
+  int numargs;
+  vmtype_t* args[12];
   int index;
   char* code;
   int used;
@@ -143,6 +145,8 @@ typedef struct vmframe_s
   vmregister_t r[256];
   vmframe_t* next;
 } vmframe_t;
+
+bool lux_vm_call_function_internal(vm_t* vm, closure_t* func, vmframe_t* frame);
 
 bool      lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable);
 vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type);
