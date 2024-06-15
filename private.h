@@ -128,6 +128,7 @@ typedef struct closure_s
 {
   char name[128];
   bool native;
+  bool (*callback)(vm_t* vm, vmframe_t* frame);
   vmtype_t* rettype;
   int numargs;
   vmtype_t* args[12];
@@ -154,6 +155,7 @@ vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type);
 
 closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype);
 closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype);
+bool       lux_vm_register_native_function(vm_t* vm, const char* signature, bool (*callback)(vm_t* vm, vmframe_t* frame));
 closure_t* lux_vm_get_function_s(vm_t* vm, const char* name);
 closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name);
 

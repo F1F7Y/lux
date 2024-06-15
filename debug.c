@@ -22,6 +22,13 @@ void lux_debug_dump_code(closure_t* closure)
     }
   }
   printf(") (index: %d)\n", closure->index);
+
+  if(closure->native)
+  {
+    printf("  Closure is native: %p\n", closure->callback);
+    return;
+  }
+
   if(closure->code == NULL)
   {
     printf("Closure has no code\n");

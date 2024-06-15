@@ -70,7 +70,7 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
       break;
       case OP_RET:
       {
-        printf("Function %s returning %d (%f)\n", frame->closure->name, frame->r[0].ivalue, frame->r[0].fvalue);
+        //printf("Function %s returning %d (%f)\n", frame->closure->name, frame->r[0].ivalue, frame->r[0].fvalue);
         return true;
       }
       break;case OP_ITOF:

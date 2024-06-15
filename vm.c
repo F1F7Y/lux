@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+static bool callback_printint(vm_t* vm, vmframe_t* frame)
+{
+  printf("DBG: %i\n", frame->r[1].ivalue);
+  return true;
+}
+
 bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 {
   memset(vm->lasterror, 0, 256);
@@ -27,6 +33,8 @@ bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 
   vm->tint = lux_vm_get_type_s(vm, "int");
   vm->tfloat = lux_vm_get_type_s(vm, "float");
+
+  TRY(lux_vm_register_native_function(vm, "void printint(int)", callback_printint))
 
   return true;
 }
@@ -58,17 +66,27 @@ closure_t* lux_vm_get_function(vm_t* vm, const char* name)
 
 bool lux_vm_call_function_internal(vm_t* vm, closure_t* func, vmframe_t* frame)
 {
-  printf("Calling %s internal\n", func->name);
+  //printf("Calling %s internal\n", func->name);
   vmframe_t newframe;
   newframe.vm = vm;
   newframe.closure = func;
   newframe.next = vm->frames;
   vm->frames = &newframe;
+
   for(int i = 0; i < func->numargs; i++)
   {
     newframe.r[i + 1] = frame->r[i + 1];
   }
-  TRY(lux_vm_interpret_frame(vm, &newframe))
+
+  if(!func->native)
+  {
+    TRY(lux_vm_interpret_frame(vm, &newframe))
+  }
+  else
+  {
+    TRY(func->callback(vm, &newframe))
+  }
+
   vm->frames = newframe.next;
   frame->r[0] = newframe.r[0];
   return true;
@@ -76,7 +94,7 @@ bool lux_vm_call_function_internal(vm_t* vm, closure_t* func, vmframe_t* frame)
 
 bool lux_vm_call_function(vm_t* vm, closure_t* func, vmregister_t* ret)
 {
-  printf("Calling %s public\n", func->name);
+  //printf("Calling %s public\n", func->name);
   vmframe_t frame;
   frame.vm = vm;
   frame.closure = func;
@@ -173,6 +191,85 @@ closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype
   tokenbuf[name->length] = '\0';
 
   return lux_vm_register_function_s(vm, tokenbuf, rettype);
+}
+
+bool lux_vm_register_native_function(vm_t* vm, const char* signature, bool (*callback)(vm_t* vm, vmframe_t* frame))
+{
+  lexer_t lexer;
+  lux_lexer_init(&lexer, vm, (char*)signature);
+
+  token_t ret;
+  lux_lexer_get_token(&lexer, &ret);
+
+  vmtype_t* rettype = lux_vm_get_type_t(vm, &ret);
+  if(rettype == NULL)
+  {
+    lux_vm_set_error_t(vm, "Expected return type, got %s instead", &ret);
+    return false;
+  }
+
+  token_t name;
+  lux_lexer_get_token(&lexer, &name);
+  if(name.type != TT_NAME)
+  {
+    lux_vm_set_error_t(vm, "Expected function name, got %s instead", &name);
+    return false;
+  }
+
+  closure_t* closure = lux_vm_register_function_t(vm, &name, rettype);
+  TRY(closure)
+
+  closure->native = true;
+
+  TRY(lux_lexer_expect_token(&lexer, '('))
+
+  while(true)
+  {
+    token_t token;
+    lux_lexer_get_token(&lexer, &token);
+
+    if(*token.buf == ')')
+    {
+      break;
+    }
+
+    if(token.type != TT_NAME)
+    {
+      lux_vm_set_error_t(vm, "Expected type, got %s", &token);
+      return false;
+    }
+
+    vmtype_t* type = lux_vm_get_type_t(vm, &token);
+    if(type == NULL)
+    {
+      lux_vm_set_error_t(vm, "Expected type, got %s", &token);
+      return false;
+    }
+
+    if(closure->numargs == 12)
+    {
+      lux_vm_set_error(vm, "A function can have up to 12 arguments max");
+      return false;
+    }
+
+    closure->args[closure->numargs] = type;
+    closure->numargs++;
+
+    lux_lexer_get_token(&lexer, &token);
+    if(*token.buf == ')')
+    {
+      break;
+    }
+    else if(*token.buf != ',')
+    {
+      lux_vm_set_error_t(vm, "Expected ',', got %s", &token);
+      return false;
+    }
+  }
+
+  closure->callback = callback;
+
+  return true;
 }
 
 closure_t* lux_vm_get_function_s(vm_t* vm, const char* name)
