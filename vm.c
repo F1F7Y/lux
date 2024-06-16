@@ -10,6 +10,18 @@ static bool callback_printint(vm_t* vm, vmframe_t* frame)
   return true;
 }
 
+static bool callback_printfloat(vm_t* vm, vmframe_t* frame)
+{
+  printf("DBG: %f\n", frame->r[1].fvalue);
+  return true;
+}
+
+static bool callback_printbool(vm_t* vm, vmframe_t* frame)
+{
+  printf("DBG: %s\n", frame->r[1].ivalue ? "true" : "false");
+  return true;
+}
+
 bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 {
   memset(vm->lasterror, 0, 256);
@@ -35,6 +47,8 @@ bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
   vm->tfloat = lux_vm_get_type_s(vm, "float");
 
   TRY(lux_vm_register_native_function(vm, "void printint(int)", callback_printint))
+  TRY(lux_vm_register_native_function(vm, "void printfloat(float)", callback_printfloat))
+  TRY(lux_vm_register_native_function(vm, "void printbool(bool)", callback_printbool))
 
   return true;
 }
