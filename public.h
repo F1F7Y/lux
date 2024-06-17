@@ -22,6 +22,7 @@ typedef struct vm_s
   vmtype_t* types;
   vmtype_t* tint;   // Asigned to TT_INT tokens
   vmtype_t* tfloat; // Asigned to TT_FLOAT tokens
+  vmtype_t* tbool;  // Asigned to TT_BOOL tokens
   closure_t* functions;
   vmframe_t* frames;
 

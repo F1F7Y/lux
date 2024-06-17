@@ -22,11 +22,11 @@ enum
   OP_SUBI,   // 4    | <1op,1reg,1reg,1reg> | Subtract two integers
   OP_MULI,   // 4    | <1op,1reg,1reg,1reg> | Multiply two integers
   OP_DIVI,   // 4    | <1op,1reg,1reg,1reg> | Divide two integers
-  OP_ITOF,   // 3    | <1op,1reg,1reg>      | Cast an int to a float
   OP_ADDF,   // 4    | <1op,1reg,1reg,1reg> | Add two floats
   OP_SUBF,   // 4    | <1op,1reg,1reg,1reg> | Subtract two floats
   OP_MULF,   // 4    | <1op,1reg,1reg,1reg> | Multiply two floats
   OP_DIVF,   // 4    | <1op,1reg,1reg,1reg> | Divide two floats
+  OP_ITOF,   // 3    | <1op,1reg,1reg>      | Cast an int to a float
   OP_FTOI,   // 3    | <1op,1reg,1reg>      | Cast a float to an int
 };
 

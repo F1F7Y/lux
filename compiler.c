@@ -38,7 +38,7 @@ static unsigned char lux_instruction_for_operator(bool isint, char operator)
   return OP_ADDI;
 }
 
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype);
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype, vmtype_t* wishtype);
 
 static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, closure_t* called)
 {
@@ -47,7 +47,7 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
   {
     vmtype_t* argtype;
     unsigned char reg;
-    TRY(lux_compiler_expression(comp, closure, &reg, &argtype))
+    TRY(lux_compiler_expression(comp, closure, &reg, &argtype, called->args[i]))
     
     if(argtype != called->args[i])
     {
@@ -75,7 +75,7 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
 {
   if(*value->buf == '(')
   {
-    TRY(lux_compiler_expression(comp, closure, ret, rettype))
+    TRY(lux_compiler_expression(comp, closure, ret, rettype, NULL))
     TRY(lux_lexer_expect_token(comp->lex, ')'))
     return true;
   }
@@ -245,9 +245,32 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   return true;
 }
 
+static bool lux_compiler_try_cast(compiler_t* comp, closure_t* closure, vmtype_t* ft, unsigned char fr, vmtype_t* tt, unsigned char* rr)
+{
+  if(ft == comp->vm->tint && tt == comp->vm->tfloat) // int -> float
+  {
+    lux_compiler_alloc_register_generic(comp, rr);
+    lux_vm_closure_append_byte(comp->vm, closure, OP_ITOF);
+    lux_vm_closure_append_byte(comp->vm, closure, fr);
+    lux_vm_closure_append_byte(comp->vm, closure, *rr);
+    lux_compiler_free_register_generic(comp, fr);
+    return true;
+  }
+  else if(ft == comp->vm->tfloat && tt == comp->vm->tint) // float -> int
+  {
+    lux_compiler_alloc_register_generic(comp, rr);
+    lux_vm_closure_append_byte(comp->vm, closure, OP_FTOI);
+    lux_vm_closure_append_byte(comp->vm, closure, fr);
+    lux_vm_closure_append_byte(comp->vm, closure, *rr);
+    lux_compiler_free_register_generic(comp, fr);
+    return true;
+  }
+
+  return false;
+}
 
 // Parses initial number then calls lux_compiler_expression_e
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype)
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype, vmtype_t* wishtype)
 {
   token_t value;
   lux_lexer_get_token(comp->lex, &value);
@@ -273,8 +296,14 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsign
     {
       *ret = vr;
       *rettype = vrtype;
-      return true;
     }
+  }
+
+  unsigned char cr;
+  if(lux_compiler_try_cast(comp, closure, *rettype, *ret, wishtype, &cr))
+  {
+    *ret = cr;
+    *rettype = wishtype;
   }
 
   return true;
@@ -315,7 +344,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         {
           unsigned char retvalue;
           vmtype_t* rettype;
-          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype));
+          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype, closure->rettype));
 
           if(rettype != closure->rettype)
           {
@@ -367,7 +396,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         {
           unsigned char retvalue;
           vmtype_t* rettype;
-          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype));
+          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype, var->type));
 
           if(rettype != var->type)
           {
@@ -395,7 +424,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         TRY(lux_lexer_expect_token(comp->lex, '='))
         unsigned char retvalue;
         vmtype_t* rettype;
-        TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype))
+        TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype, v->type))
         
         if(rettype != v->type)
         {

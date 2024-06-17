@@ -45,6 +45,7 @@ bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 
   vm->tint = lux_vm_get_type_s(vm, "int");
   vm->tfloat = lux_vm_get_type_s(vm, "float");
+  vm->tbool = lux_vm_get_type_s(vm, "bool");
 
   TRY(lux_vm_register_native_function(vm, "void printint(int)", callback_printint))
   TRY(lux_vm_register_native_function(vm, "void printfloat(float)", callback_printfloat))
