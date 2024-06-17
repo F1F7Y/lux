@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 
+//-----------------------------------------------
+// Dumps bytecode for all closures
+//-----------------------------------------------
 void lux_debug_dump_code_all(vm_t* vm)
 {
   for(closure_t* c = vm->functions; c != NULL; c = c->next)
@@ -10,6 +13,9 @@ void lux_debug_dump_code_all(vm_t* vm)
   }
 }
 
+//-----------------------------------------------
+// Dumps bytecode for a specific closure
+//-----------------------------------------------
 void lux_debug_dump_code(closure_t* closure)
 {
   printf("Dumping closure: %s %s(", closure->rettype->name, closure->name);
@@ -116,14 +122,6 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 1;
       }
       break;
-      case OP_ITOF:
-      {
-        const unsigned char lv = *(unsigned char*)(cursor + 1);
-        const unsigned char rv = *(unsigned char*)(cursor + 2);
-        printf("itof %d %d  // r[%d] <- (float)r[%d]\n", lv, rv, rv, lv);
-        cursor += 3;
-      }
-      break;
       case OP_ADDF:
       {
         const unsigned char lv = *(unsigned char*)(cursor + 1);
@@ -158,6 +156,14 @@ void lux_debug_dump_code(closure_t* closure)
         const unsigned char res = *(unsigned char*)(cursor + 3);
         printf("divf   %d %d %d  // r[%d] <- r[%d] / r[%d]\n", lv, rv, res, res, lv, rv);
         cursor += 4;
+      }
+      break;
+      case OP_ITOF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        printf("itof %d %d  // r[%d] <- (float)r[%d]\n", lv, rv, rv, lv);
+        cursor += 3;
       }
       break;
       case OP_FTOI:

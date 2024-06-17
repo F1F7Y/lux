@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
+//-----------------------------------------------
+// Initilazes the compiler_t struct
+//-----------------------------------------------
 void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
 {
   comp->vm = vm;
@@ -12,6 +15,10 @@ void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
   comp->vc = 0;
 }
 
+//-----------------------------------------------
+// Returns a opcode for an operator
+// asserts if provided with invalid input
+//-----------------------------------------------
 static unsigned char lux_instruction_for_operator(bool isint, char operator)
 {
   if(isint)
@@ -40,6 +47,10 @@ static unsigned char lux_instruction_for_operator(bool isint, char operator)
 
 static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype, vmtype_t* wishtype);
 
+//-----------------------------------------------
+// Parses arguments for a function call
+// Returns false on fatal error
+//-----------------------------------------------
 static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, closure_t* called)
 {
   TRY(lux_lexer_expect_token(comp->lex, '('))
@@ -71,6 +82,12 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
   return true;
 }
 
+//-----------------------------------------------
+// Parses a value and tries to cast it
+// A value can be a single number, variable,
+// function call or an entire expression
+// Returns false on fatal error
+//-----------------------------------------------
 static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token_t* value, unsigned char* ret, vmtype_t** rettype)
 {
   if(*value->buf == '(')
@@ -142,7 +159,12 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
   return true;
 }
 
-// Parses '+ 9' then calls itself
+//-----------------------------------------------
+// Parses the operator and value after it
+// Based on the next operator either waits to
+// or emits immediately instructions
+// Returns false on fatal error
+//-----------------------------------------------
 static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool priority, unsigned char lv, vmtype_t* ltype, unsigned char* ret, vmtype_t** rettype)
 {
   token_t op;
@@ -245,6 +267,10 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   return true;
 }
 
+//-----------------------------------------------
+// Tries to cast a value, return false if it
+// couldn't
+//-----------------------------------------------
 static bool lux_compiler_try_cast(compiler_t* comp, closure_t* closure, vmtype_t* ft, unsigned char fr, vmtype_t* tt, unsigned char* rr)
 {
   if(ft == comp->vm->tint && tt == comp->vm->tfloat) // int -> float
@@ -269,7 +295,13 @@ static bool lux_compiler_try_cast(compiler_t* comp, closure_t* closure, vmtype_t
   return false;
 }
 
-// Parses initial number then calls lux_compiler_expression_e
+//-----------------------------------------------
+// Parses an expression
+// Parses the initial value then relies on
+// lux_compiler_expression_e to recursively
+// parse
+// Returns false on fatal error
+//-----------------------------------------------
 static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype, vmtype_t* wishtype)
 {
   token_t value;
@@ -309,6 +341,10 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsign
   return true;
 }
 
+//-----------------------------------------------
+// Parses an entire scope from { to }
+// Returns false on fatal error
+//-----------------------------------------------
 static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
 {
   lux_compiler_enter_scope(comp);
@@ -448,6 +484,10 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
   return false;
 }
 
+//-----------------------------------------------
+// Runs the compiler
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_compiler_compile_file(compiler_t* comp)
 {
   token_t dummy;
@@ -575,12 +615,19 @@ bool lux_compiler_compile_file(compiler_t* comp)
   return true;
 }
 
+//-----------------------------------------------
+// Clears all registers to RS_NOT_USED
+//-----------------------------------------------
 void lux_compiler_clear_registers(compiler_t* comp)
 {
   memset(comp->r, 0, sizeof(int) * 256);
   comp->r[0] = true;
 }
 
+//-----------------------------------------------
+// Allocates a register of type RS_GENERIC
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_compiler_alloc_register_generic(compiler_t* comp, unsigned char* reg)
 {
   // r0 is return values
@@ -598,6 +645,10 @@ bool lux_compiler_alloc_register_generic(compiler_t* comp, unsigned char* reg)
   return false;
 }
 
+//-----------------------------------------------
+// Allocates a register of type RS_VARIABLE
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_compiler_alloc_register_variable(compiler_t* comp, unsigned char* reg)
 {
   // r0 is return values
@@ -615,6 +666,10 @@ bool lux_compiler_alloc_register_variable(compiler_t* comp, unsigned char* reg)
   return false;
 }
 
+//-----------------------------------------------
+// Sets a register to RS_NOT_USED only if it is
+// of type RS_GENERIC
+//-----------------------------------------------
 void lux_compiler_free_register_generic(compiler_t* comp, unsigned char reg)
 {
   if(comp->r[reg] == RS_GENERIC)
@@ -623,6 +678,10 @@ void lux_compiler_free_register_generic(compiler_t* comp, unsigned char reg)
   }
 }
 
+//-----------------------------------------------
+// Sets a register to RS_NOT_USED only if it is
+// of type RS_VARIABLE
+//-----------------------------------------------
 void lux_compiler_free_register_variable(compiler_t* comp, unsigned char reg)
 {
   if(comp->r[reg] == RS_VARIABLE)
@@ -631,6 +690,10 @@ void lux_compiler_free_register_variable(compiler_t* comp, unsigned char reg)
   }
 }
 
+//-----------------------------------------------
+// Registers a variable
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, cpvar_t** var)
 {
   for(int i = 0; i < comp->vc; i++)
@@ -673,6 +736,10 @@ bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, 
   return true;
 }
 
+//-----------------------------------------------
+// Gets a variable
+// Returns NULL if it doesn't exist
+//-----------------------------------------------
 cpvar_t* lux_compiler_get_var(compiler_t* comp, token_t* name)
 {
   for(int i = 0; i < comp->vc; i++)
@@ -686,11 +753,18 @@ cpvar_t* lux_compiler_get_var(compiler_t* comp, token_t* name)
   return NULL;
 }
 
+//-----------------------------------------------
+// Increases the compiler scope tracker
+//-----------------------------------------------
 void lux_compiler_enter_scope(compiler_t* comp)
 {
   comp->z++;
 }
 
+//-----------------------------------------------
+// Leaves a scope and cleans up all variables
+// declared in it
+//-----------------------------------------------
 void lux_compiler_leave_scope(compiler_t* comp)
 {
   comp->z--;

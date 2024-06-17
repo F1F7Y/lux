@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+//-----------------------------------------------
+// Debug native closure callbacks
 static bool callback_printint(vm_t* vm, vmframe_t* frame)
 {
   printf("DBG: %i\n", frame->r[1].ivalue);
@@ -22,6 +24,11 @@ static bool callback_printbool(vm_t* vm, vmframe_t* frame)
   return true;
 }
 
+//-----------------------------------------------
+// Initilazes the vm_t struct and registers
+// basic types and debug functions
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 {
   memset(vm->lasterror, 0, 256);
@@ -54,6 +61,10 @@ bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
   return true;
 }
 
+//-----------------------------------------------
+// Loads and compiles a text buffer into a vm
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_load(vm_t* vm, char* buf)
 {
   lexer_t lexer;
@@ -66,6 +77,10 @@ bool lux_vm_load(vm_t* vm, char* buf)
   return true;
 }
 
+//-----------------------------------------------
+// Gets a function by name
+// Returns NULL if it doesn't exist
+//-----------------------------------------------
 closure_t* lux_vm_get_function(vm_t* vm, const char* name)
 {
   for(closure_t* fp = vm->functions; fp != NULL; fp = fp->next)
@@ -79,6 +94,10 @@ closure_t* lux_vm_get_function(vm_t* vm, const char* name)
   return NULL;
 }
 
+//-----------------------------------------------
+// Internal implementation for OP_CALL
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_call_function_internal(vm_t* vm, closure_t* func, vmframe_t* frame)
 {
   //printf("Calling %s internal\n", func->name);
@@ -107,6 +126,11 @@ bool lux_vm_call_function_internal(vm_t* vm, closure_t* func, vmframe_t* frame)
   return true;
 }
 
+//-----------------------------------------------
+// Public implementation of a function call
+// Doesn't support calling native functions
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_call_function(vm_t* vm, closure_t* func, vmregister_t* ret)
 {
   //printf("Calling %s public\n", func->name);
@@ -121,6 +145,10 @@ bool lux_vm_call_function(vm_t* vm, closure_t* func, vmregister_t* ret)
   return true;
 }
 
+//-----------------------------------------------
+// Tries to register a type
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
 {
   if(lux_vm_get_type_s(vm, type) != NULL)
@@ -136,6 +164,10 @@ bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
   vm->types = t;
 }
 
+//-----------------------------------------------
+// Gets a type by its string name
+// Returns NULL if it doesn't exist
+//-----------------------------------------------
 vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type)
 {
   for(vmtype_t* t = vm->types; t != NULL; t = t->next)
@@ -149,6 +181,10 @@ vmtype_t* lux_vm_get_type_s(vm_t* vm, const char* type)
   return NULL;
 }
 
+//-----------------------------------------------
+// Gets a type using a token
+// Returns NULL if it doesn't exist
+//-----------------------------------------------
 vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type)
 {
   for(vmtype_t* t = vm->types; t != NULL; t = t->next)
@@ -162,6 +198,10 @@ vmtype_t* lux_vm_get_type_t(vm_t* vm, token_t* type)
   return NULL;
 }
 
+//-----------------------------------------------
+// Tries to register a function using a string
+// Returns NULL on fatal error
+//-----------------------------------------------
 closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rettype)
 {
   if(lux_vm_get_function_s(vm, name) != NULL)
@@ -193,6 +233,10 @@ closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rett
   return fp;
 }
 
+//-----------------------------------------------
+// Tries to register a function using a token
+// Return NULL on fatal error
+//-----------------------------------------------
 closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype)
 {
   if(name->length > 127)
@@ -208,6 +252,10 @@ closure_t* lux_vm_register_function_t(vm_t* vm, token_t* name, vmtype_t* rettype
   return lux_vm_register_function_s(vm, tokenbuf, rettype);
 }
 
+//-----------------------------------------------
+// Tries to register a native function
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_register_native_function(vm_t* vm, const char* signature, bool (*callback)(vm_t* vm, vmframe_t* frame))
 {
   lexer_t lexer;
@@ -287,6 +335,10 @@ bool lux_vm_register_native_function(vm_t* vm, const char* signature, bool (*cal
   return true;
 }
 
+//-----------------------------------------------
+// Gets a function by its string name
+// Returns NULL if it doesn't exist
+//-----------------------------------------------
 closure_t* lux_vm_get_function_s(vm_t* vm, const char* name)
 {
   for(closure_t* fp = vm->functions; fp != NULL; fp = fp->next)
@@ -300,6 +352,10 @@ closure_t* lux_vm_get_function_s(vm_t* vm, const char* name)
   return NULL;
 }
 
+//-----------------------------------------------
+// Gets a function by its token name
+// Returns NULL if it doesn't exist
+//-----------------------------------------------
 closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
 {
   for(closure_t* fp = vm->functions; fp != NULL; fp = fp->next)
@@ -313,6 +369,9 @@ closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
   return NULL;
 }
 
+//-----------------------------------------------
+// Ensures there's enough space for 'size' bytes
+//-----------------------------------------------
 static void lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
 {
   if(closure->allocated - closure->used > size)
@@ -325,6 +384,9 @@ static void lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
   closure->code = xrealloc(vm, closure->code, closure->allocated);
 }
 
+//-----------------------------------------------
+// Appends a byte into a closure stream
+//-----------------------------------------------
 void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte)
 {
   lux_vm_closure_ensure_free(vm, closure, 1);
@@ -332,6 +394,9 @@ void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte
   closure->used += 1;
 }
 
+//-----------------------------------------------
+// Appends an int into a closure stream
+//-----------------------------------------------
 void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i)
 {
   lux_vm_closure_ensure_free(vm, closure, 4);
@@ -339,6 +404,9 @@ void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i)
   closure->used += 4;
 }
 
+//-----------------------------------------------
+// Appends a float into a closure stream
+//-----------------------------------------------
 void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f)
 {
   lux_vm_closure_ensure_free(vm, closure, 4);
@@ -346,6 +414,10 @@ void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f)
   closure->used += 4;
 }
 
+//-----------------------------------------------
+// Returns true if the last byte in a closure
+// stream is 'b'
+//-----------------------------------------------
 bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b)
 {
   if(closure->used == 0)
@@ -356,23 +428,36 @@ bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b)
   return *(closure->code + closure->used - 1) == b;
 }
 
+//-----------------------------------------------
+// Packs the closure stream into its smallest
+// possible allocation size
+//-----------------------------------------------
 void lux_vm_closure_finish(vm_t* vm, closure_t* closure)
 {
   closure->allocated = closure->used;
   closure->code = xrealloc(vm, closure->code, closure->allocated);
 }
 
+//-----------------------------------------------
+// Sets the error using a string
+//-----------------------------------------------
 void lux_vm_set_error(vm_t* vm, char* error)
 {
   strncpy(vm->lasterror, error, 256);
   vm->lasterror[255] = '\0';
 }
 
+//-----------------------------------------------
+// Sets the error with one string vararg
+//-----------------------------------------------
 void lux_vm_set_error_s(vm_t* vm, char* error, const char* str1)
 {
   snprintf(vm->lasterror, 256, error, str1);
 }
 
+//-----------------------------------------------
+// Sets the error with one token vararg
+//-----------------------------------------------
 void lux_vm_set_error_t(vm_t* vm, char* error, token_t* token)
 {
   char tokenbuf[1024];
@@ -381,11 +466,18 @@ void lux_vm_set_error_t(vm_t* vm, char* error, token_t* token)
   lux_vm_set_error_s(vm, error, tokenbuf);
 }
 
+//-----------------------------------------------
+// Sets the error with two string varargs
+//-----------------------------------------------
 void lux_vm_set_error_ss(vm_t* vm, char* error, const char* str1, const char* str2)
 {
   snprintf(vm->lasterror, 256, error, str1, str2);
 }
 
+//-----------------------------------------------
+// Sets the error with one token and one string
+// vararg
+//-----------------------------------------------
 void lux_vm_set_error_ts(vm_t* vm, char* error, token_t* token, const char* str)
 {
   char tokenbuf[1024];
@@ -394,6 +486,10 @@ void lux_vm_set_error_ts(vm_t* vm, char* error, token_t* token, const char* str)
   lux_vm_set_error_ss(vm, error, tokenbuf, str);
 }
 
+//-----------------------------------------------
+// Sets the error with one string and one token
+// vararg
+//-----------------------------------------------
 void lux_vm_set_error_st(vm_t* vm, char* error, const char* str, token_t* token)
 {
   char tokenbuf[1024];

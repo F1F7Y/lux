@@ -45,7 +45,7 @@ typedef struct cpvar_s
 
 enum
 {
-  RS_NOT_USED, // Register isn't being used
+  RS_NOT_USED = 0, // Register isn't being used
   RS_VARIABLE, // Register is used by a variable
   RS_GENERIC,  // Register is used for generic operations
 };

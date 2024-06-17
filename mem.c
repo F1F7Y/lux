@@ -5,6 +5,10 @@
 
 #define MINCHUNKMEM 32
 
+//-----------------------------------------------
+// Tries to allocate a chunk of 'size' bytes
+// Returns NULL on failure
+//-----------------------------------------------
 void* xalloc(vm_t* vm, unsigned int size)
 {
   if(size == 0)
@@ -50,6 +54,14 @@ void* xalloc(vm_t* vm, unsigned int size)
   return NULL;
 }
 
+//-----------------------------------------------
+// Tries to reallocate a chunk to 'size' bytes
+// If 'ptr' is NULL and 'size' is not 0 it allocates
+// new memory
+// If 'ptr' is not NULL and 'size' is 0 it frees
+// the pointer
+// Returns NULL on failure
+//-----------------------------------------------
 void* xrealloc(vm_t* vm, void* ptr, unsigned int size)
 {
   if(ptr == NULL)
@@ -128,6 +140,9 @@ void* xrealloc(vm_t* vm, void* ptr, unsigned int size)
   return NULL;
 }
 
+//-----------------------------------------------
+// Frees 'ptr'
+//-----------------------------------------------
 void xfree(vm_t* vm, void* ptr)
 {
   if(ptr == NULL)

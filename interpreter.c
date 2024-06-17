@@ -2,6 +2,10 @@
 
 #include <stdio.h>
 
+//-----------------------------------------------
+// Interprets a vmframe_t closure stream
+// Returns false on fatal error
+//-----------------------------------------------
 bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
 {
   char* code = frame->closure->code;

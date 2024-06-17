@@ -12,6 +12,9 @@ static const char* reserved_tokens[] =
   "true", "false"
 };
 
+//-----------------------------------------------
+// Initilazes the lexer_t struct
+//-----------------------------------------------
 void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer)
 {
   char* c = buffer;
@@ -27,6 +30,10 @@ void lux_lexer_init(lexer_t* lex, vm_t* vm, char* buffer)
   lex->token_avalible = false;
 }
 
+//-----------------------------------------------
+// Check if a token is an integer
+// If it is convert it to TT_INT
+//-----------------------------------------------
 static void lux_lexer_token_check_integer(lexer_t* lex, token_t* token)
 {
   for(int i = 0; i < token->length; i++)
@@ -41,6 +48,10 @@ static void lux_lexer_token_check_integer(lexer_t* lex, token_t* token)
   token->type = TT_INT;
 }
 
+//-----------------------------------------------
+// Check if a token is a float
+// If it is conver it to TT_FLOAT
+//-----------------------------------------------
 static void lux_lexer_token_check_float(lexer_t* lex, token_t* token)
 {
   for(int i = 0; i < token->length; i++)
@@ -57,6 +68,9 @@ static void lux_lexer_token_check_float(lexer_t* lex, token_t* token)
   lex->cursor = end;
 }
 
+//-----------------------------------------------
+// Gets a token and returns its type
+//-----------------------------------------------
 int lux_lexer_get_token(lexer_t* lex, token_t* token)
 {
   if(lex->token_avalible)
@@ -185,6 +199,10 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
   return token->type;
 }
 
+//-----------------------------------------------
+// Gets a token and returns false if it isn't
+// what we wanted
+//-----------------------------------------------
 bool lux_lexer_expect_token(lexer_t* lex, char token)
 {
   token_t tk;
@@ -202,12 +220,19 @@ bool lux_lexer_expect_token(lexer_t* lex, char token)
   return false;
 }
 
+//-----------------------------------------------
+// Ungets the last token
+// Asserts if there already is a token waiting
+//-----------------------------------------------
 void lux_lexer_unget_last_token(lexer_t* lex)
 {
   assert(!lex->token_avalible);
   lex->token_avalible = true;
 }
 
+//-----------------------------------------------
+// Returns true if token is a reserved word
+//-----------------------------------------------
 bool lux_lexer_is_reserved(token_t* token)
 {
   for(int i = 0; i < sizeof(reserved_tokens)/sizeof(*reserved_tokens); i++)
@@ -222,11 +247,17 @@ bool lux_lexer_is_reserved(token_t* token)
   return false;
 }
 
+//-----------------------------------------------
+// Returns true if token is c
+//-----------------------------------------------
 bool lux_token_is_c(token_t* token, char c)
 {
   return token->length == 1 && token->type == TT_TOKEN && *token->buf == c;
 }
 
+//-----------------------------------------------
+// Returns true if token is str
+//-----------------------------------------------
 bool lux_token_is_str(token_t* token, const char* str)
 {
   if(token->type != TT_NAME)
