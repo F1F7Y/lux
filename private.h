@@ -81,7 +81,8 @@ enum
   TT_NAME,  // Multi character name
   TT_TOKEN, // Single character token ( eg '!' or '<' )
   TT_INT,   // Integer
-  TT_FLOAT  // Float
+  TT_FLOAT, // Float
+  TT_BOOL,  // Boolean
 };
 
 typedef struct token_s

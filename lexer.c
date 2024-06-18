@@ -69,6 +69,27 @@ static void lux_lexer_token_check_float(lexer_t* lex, token_t* token)
 }
 
 //-----------------------------------------------
+// Check if a token is a float
+// If it is conver it to TT_BOOL
+//-----------------------------------------------
+static void lux_lexer_token_check_bool(lexer_t* lex, token_t* token)
+{
+  if(lux_token_is_str(token, "true"))
+  {
+    token->ivalue = 1;
+  }
+  else if(lux_token_is_str(token, "false"))
+  {
+    token->ivalue = 0;
+  }
+  else
+  {
+    return;
+  }
+  token->type = TT_BOOL;
+}
+
+//-----------------------------------------------
 // Gets a token and returns its type
 //-----------------------------------------------
 int lux_lexer_get_token(lexer_t* lex, token_t* token)
@@ -192,6 +213,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
 
   lux_lexer_token_check_float(lex, token);
   lux_lexer_token_check_integer(lex, token);
+  lux_lexer_token_check_bool(lex, token);
 
   lex->column += token->length;
 

@@ -150,6 +150,15 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
     *rettype = comp->vm->tfloat;
     return true;
   }
+  else if(value->type == TT_BOOL)
+  {
+    TRY(lux_compiler_alloc_register_generic(comp, ret))
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_int(comp->vm, closure, value->ivalue);
+    *rettype = comp->vm->tbool;
+    return true;
+  }
   else
   {
     lux_vm_set_error_t(comp->vm, "Failed to get value from: '%s'", value);
