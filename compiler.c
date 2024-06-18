@@ -169,6 +169,34 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
 }
 
 //-----------------------------------------------
+// Tries to cast a value, return false if it
+// couldn't
+//-----------------------------------------------
+static bool lux_compiler_try_cast(compiler_t* comp, closure_t* closure, vmtype_t* ft, unsigned char fr, vmtype_t* tt, unsigned char* rr)
+{
+  if(ft == comp->vm->tint && tt == comp->vm->tfloat) // int -> float
+  {
+    lux_compiler_alloc_register_generic(comp, rr);
+    lux_vm_closure_append_byte(comp->vm, closure, OP_ITOF);
+    lux_vm_closure_append_byte(comp->vm, closure, fr);
+    lux_vm_closure_append_byte(comp->vm, closure, *rr);
+    lux_compiler_free_register_generic(comp, fr);
+    return true;
+  }
+  else if(ft == comp->vm->tfloat && tt == comp->vm->tint) // float -> int
+  {
+    lux_compiler_alloc_register_generic(comp, rr);
+    lux_vm_closure_append_byte(comp->vm, closure, OP_FTOI);
+    lux_vm_closure_append_byte(comp->vm, closure, fr);
+    lux_vm_closure_append_byte(comp->vm, closure, *rr);
+    lux_compiler_free_register_generic(comp, fr);
+    return true;
+  }
+
+  return false;
+}
+
+//-----------------------------------------------
 // Parses the operator and value after it
 // Based on the next operator either waits to
 // or emits immediately instructions
@@ -217,6 +245,21 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
     unsigned char r;
     TRY(lux_compiler_alloc_register_generic(comp, &r));
 
+    if(ltype == comp->vm->tfloat || rtype == comp->vm->tfloat)
+    {
+      unsigned char tr;
+      if(lux_compiler_try_cast(comp, closure, ltype, lv, comp->vm->tfloat, &tr))
+      {
+        ltype = comp->vm->tfloat;
+        lv = tr;
+      }
+      if(lux_compiler_try_cast(comp, closure, rtype, rr, comp->vm->tfloat, &tr))
+      {
+        rtype = comp->vm->tfloat;
+        rr = tr;
+      }
+    }
+
     if(ltype != rtype)
     {
       lux_vm_set_error_ss(comp->vm, "Incompatible types: '%s' '%s'", ltype->name, rtype->name);
@@ -233,6 +276,21 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
 
     TRY(lux_compiler_expression_e(comp, closure, false, r, rtype, ret, rettype));
     return true;
+  }
+
+  if(ltype == comp->vm->tfloat || rvtype == comp->vm->tfloat)
+  {
+    unsigned char tr;
+    if(lux_compiler_try_cast(comp, closure, ltype, lv, comp->vm->tfloat, &tr))
+    {
+      ltype = comp->vm->tfloat;
+      lv = tr;
+    }
+    if(lux_compiler_try_cast(comp, closure, rvtype, rv, comp->vm->tfloat, &tr))
+    {
+      rvtype = comp->vm->tfloat;
+      rv = tr;
+    }
   }
 
   if(ltype != rvtype)
@@ -274,34 +332,6 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
   }
 
   return true;
-}
-
-//-----------------------------------------------
-// Tries to cast a value, return false if it
-// couldn't
-//-----------------------------------------------
-static bool lux_compiler_try_cast(compiler_t* comp, closure_t* closure, vmtype_t* ft, unsigned char fr, vmtype_t* tt, unsigned char* rr)
-{
-  if(ft == comp->vm->tint && tt == comp->vm->tfloat) // int -> float
-  {
-    lux_compiler_alloc_register_generic(comp, rr);
-    lux_vm_closure_append_byte(comp->vm, closure, OP_ITOF);
-    lux_vm_closure_append_byte(comp->vm, closure, fr);
-    lux_vm_closure_append_byte(comp->vm, closure, *rr);
-    lux_compiler_free_register_generic(comp, fr);
-    return true;
-  }
-  else if(ft == comp->vm->tfloat && tt == comp->vm->tint) // float -> int
-  {
-    lux_compiler_alloc_register_generic(comp, rr);
-    lux_vm_closure_append_byte(comp->vm, closure, OP_FTOI);
-    lux_vm_closure_append_byte(comp->vm, closure, fr);
-    lux_vm_closure_append_byte(comp->vm, closure, *rr);
-    lux_compiler_free_register_generic(comp, fr);
-    return true;
-  }
-
-  return false;
 }
 
 //-----------------------------------------------
