@@ -27,7 +27,7 @@ void lux_debug_dump_code(closure_t* closure)
       printf(", ");
     }
   }
-  printf(") (index: %d)\n", closure->index);
+  printf(") (index: %d) %d Bytes\n", closure->index, closure->used);
 
   if(closure->native)
   {
@@ -172,6 +172,60 @@ void lux_debug_dump_code(closure_t* closure)
         const unsigned char rv = *(unsigned char*)(cursor + 2);
         printf("ftoi %d %d  // r[%d] <- (int)r[%d]\n", lv, rv, rv, lv);
         cursor += 3;
+      }
+      break;
+      case OP_EQI:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("eqi    %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_LTI:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("lti    %d %d %d  // r[%d] <- (bool)(r[%d] < r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_MTI:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("mti    %d %d %d  // r[%d] <- (bool)(r[%d] > r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_EQF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("eqf    %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_LTF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("ltf    %d %d %d  // r[%d] <- (bool)(r[%d] < r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_MTF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("mtf    %d %d %d  // r[%d] <- (bool)(r[%d] > r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
       }
       break;
       default:

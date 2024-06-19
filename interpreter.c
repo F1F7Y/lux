@@ -114,6 +114,42 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 3;
       }
       break;
+      case OP_EQI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue == frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        cursor += 4;
+      }
+      break;
+      case OP_LTI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue < frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        cursor += 4;
+      }
+      break;
+      case OP_MTI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue > frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        cursor += 4;
+      }
+      break;
+      case OP_EQF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue == frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        cursor += 4;
+      }
+      break;
+      case OP_LTF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue < frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        cursor += 4;
+      }
+      break;
+      case OP_MTF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue > frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        cursor += 4;
+      }
+      break;
       default:
       {
         lux_vm_set_error(frame->vm, "Unknown opcode");

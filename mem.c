@@ -155,7 +155,6 @@ void xfree(vm_t* vm, void* ptr)
   bool integrated = false;
 
   // Check wheter we are to the right of a free chunk
-  xmemchunk_t* l1 = NULL;
   for(xmemchunk_t* m = vm->freemem; m != NULL; m = m->next)
   {
     if((xmemchunk_t*)((char*)m + m->size + sizeof(xmemchunk_t)) == f)
@@ -165,8 +164,6 @@ void xfree(vm_t* vm, void* ptr)
       integrated = true;
       break;
     }
-
-    l1 = m;
   }
 
   // Check whether we are to the left of a free chunk;

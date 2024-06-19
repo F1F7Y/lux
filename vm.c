@@ -162,6 +162,7 @@ bool lux_vm_register_type(vm_t* vm, const char* type, bool can_be_variable)
   t->next = vm->types;
   t->can_be_variable = can_be_variable;
   vm->types = t;
+  return true;
 }
 
 //-----------------------------------------------
