@@ -216,7 +216,7 @@ closure_t* lux_vm_register_function_s(vm_t* vm, const char* name, vmtype_t* rett
   fp->name[127] = '\0';
   fp->native = false;
   fp->rettype = rettype;
-  //fp->numargs = 0;
+  fp->numargs = 0;
   fp->code = NULL;
   fp->used = 0;
   fp->allocated = 0;

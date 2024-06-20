@@ -16,36 +16,80 @@ void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
 }
 
 //-----------------------------------------------
-// Returns a opcode for an operator
-// asserts if provided with invalid input
+// Returns true if operator is supported
 //-----------------------------------------------
-static unsigned char lux_instruction_for_operator(bool isint, char operator)
+static bool lux_operator_supported(token_t* token)
 {
-  if(isint)
+  switch(*token->buf)
   {
-    switch(operator)
-    {
-      case '+': return OP_ADDI;
-      case '-': return OP_SUBI;
-      case '*': return OP_MULI;
-      case '/': return OP_DIVI;
-    }
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+    case '<':
+    case '>':
+      return token->type == TT_TOKEN;
   }
-  else
-  {
-    switch(operator)
-    {
-      case '+': return OP_ADDF;
-      case '-': return OP_SUBF;
-      case '*': return OP_MULF;
-      case '/': return OP_DIVF;
-    }
-  }
-  assert(false);
-  return OP_ADDI;
+  return false;
 }
 
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype, vmtype_t* wishtype);
+//-----------------------------------------------
+// Returns the priority of an operator
+//-----------------------------------------------
+static int lux_operator_priority(token_t* token)
+{
+  switch(*token->buf)
+  {
+    case '<':
+    case '>':
+      return 0;
+    case '+':
+    case '-':
+      return 1;
+    case '*':
+    case '/':
+      return 2;
+  }
+
+  return 0;
+}
+
+//-----------------------------------------------
+// Returns a opcode for an operator
+// Returns false on fatal error
+//-----------------------------------------------
+static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rtype, char operator, unsigned char* _op, vmtype_t** _type)
+{
+  if(ltype == vm->tint && rtype == vm->tint)
+  {
+    switch(operator)
+    {
+      case '+': *_op = OP_ADDI; *_type = vm->tint; return true;
+      case '-': *_op = OP_SUBI; *_type = vm->tint; return true;
+      case '*': *_op = OP_MULI; *_type = vm->tint; return true;
+      case '/': *_op = OP_DIVI; *_type = vm->tint; return true;
+      case '<': *_op = OP_LTI; *_type = vm->tbool; return true;
+      case '>': *_op = OP_MTI; *_type = vm->tbool; return true;
+    }
+  }
+  else if(ltype == vm->tfloat && rtype == vm->tfloat)
+  {
+    switch(operator)
+    {
+      case '+': *_op = OP_ADDF; *_type = vm->tfloat; return true;
+      case '-': *_op = OP_SUBF; *_type = vm->tfloat; return true;
+      case '*': *_op = OP_MULF; *_type = vm->tfloat; return true;
+      case '/': *_op = OP_DIVF; *_type = vm->tfloat; return true;
+      case '<': *_op = OP_LTF; *_type = vm->tbool; return true;
+      case '>': *_op = OP_MTF; *_type = vm->tbool; return true;
+    }
+  }
+
+  lux_vm_set_error_ss(vm, "Unknown operation for types %s %s", ltype->name, rtype->name);
+  return false;
+}
+
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype_t* wishtype, unsigned char* _retreg, vmtype_t** _rettype);
 
 //-----------------------------------------------
 // Parses arguments for a function call
@@ -58,7 +102,7 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
   {
     vmtype_t* argtype;
     unsigned char reg;
-    TRY(lux_compiler_expression(comp, closure, &reg, &argtype, called->args[i]))
+    TRY(lux_compiler_expression(comp, closure, called->args[i], &reg, &argtype))
     
     if(argtype != called->args[i])
     {
@@ -92,7 +136,7 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
 {
   if(*value->buf == '(')
   {
-    TRY(lux_compiler_expression(comp, closure, ret, rettype, NULL))
+    TRY(lux_compiler_expression(comp, closure, NULL, ret, rettype))
     TRY(lux_lexer_expect_token(comp->lex, ')'))
     return true;
   }
@@ -198,137 +242,94 @@ static bool lux_compiler_try_cast(compiler_t* comp, closure_t* closure, vmtype_t
 
 //-----------------------------------------------
 // Parses the operator and value after it
-// Based on the next operator either waits to
-// or emits immediately instructions
+// Uses recursion for operator precedence
 // Returns false on fatal error
 //-----------------------------------------------
-static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool priority, unsigned char lv, vmtype_t* ltype, unsigned char* ret, vmtype_t** rettype)
+static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, int priority, unsigned char lreg, vmtype_t* ltype, unsigned char* _retreg, vmtype_t** _rettype)
 {
+  // Get op
   token_t op;
   lux_lexer_get_token(comp->lex, &op);
-  if(priority && (*op.buf == '+' || *op.buf == '-'))
+  if(!lux_operator_supported(&op))
   {
+    // Invalid op, end of expression
     lux_lexer_unget_last_token(comp->lex);
+    *_retreg = lreg;
+    *_rettype = ltype;
     return true;
   }
 
-  switch(*op.buf)
+  if(lux_operator_priority(&op) < priority)
   {
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-      break;
-    default:
-      lux_lexer_unget_last_token(comp->lex);
-      *ret = lv;
-      return true;
+    // End of higher priority chain
+    lux_lexer_unget_last_token(comp->lex);
+    *_retreg = lreg;
+    *_rettype = ltype;
+    return true;
   }
 
+  // Get op rvalue
   token_t rvalue;
   lux_lexer_get_token(comp->lex, &rvalue);
 
-  unsigned char rv;
+  unsigned char rval;
   vmtype_t* rvtype;
-  TRY(lux_compiler_parse_value(comp, closure, &rvalue, &rv, &rvtype))
+  TRY(lux_compiler_parse_value(comp, closure, &rvalue, &rval, &rvtype))
 
-  // Check if next operation has higer priority if so do it first
+  // Peek next op
   token_t nextop;
   lux_lexer_get_token(comp->lex, &nextop);
   lux_lexer_unget_last_token(comp->lex);
-  if((*op.buf == '+' || *op.buf == '-') && (*nextop.buf == '*' || *nextop.buf == '/'))
+  while(lux_operator_priority(&nextop) > lux_operator_priority(&op) && lux_operator_supported(&nextop))
   {
-    unsigned char rr;
-    vmtype_t* rtype;
-    TRY(lux_compiler_expression_e(comp, closure, true, rv, rvtype, &rr, &rtype));
-    
-    unsigned char r;
-    TRY(lux_compiler_alloc_register_generic(comp, &r));
-
-    if(ltype == comp->vm->tfloat || rtype == comp->vm->tfloat)
-    {
-      unsigned char tr;
-      if(lux_compiler_try_cast(comp, closure, ltype, lv, comp->vm->tfloat, &tr))
-      {
-        ltype = comp->vm->tfloat;
-        lv = tr;
-      }
-      if(lux_compiler_try_cast(comp, closure, rtype, rr, comp->vm->tfloat, &tr))
-      {
-        rtype = comp->vm->tfloat;
-        rr = tr;
-      }
-    }
-
-    if(ltype != rtype)
-    {
-      lux_vm_set_error_ss(comp->vm, "Incompatible types: '%s' '%s'", ltype->name, rtype->name);
-      return false;
-    }
-
-    lux_vm_closure_append_byte(comp->vm, closure, lux_instruction_for_operator(ltype == comp->vm->tint, *op.buf));
-    lux_vm_closure_append_byte(comp->vm, closure, lv);
-    lux_vm_closure_append_byte(comp->vm, closure, rr);
-    lux_vm_closure_append_byte(comp->vm, closure, r);
-
-    lux_compiler_free_register_generic(comp, lv);
-    lux_compiler_free_register_generic(comp, rr);
-
-    TRY(lux_compiler_expression_e(comp, closure, false, r, rtype, ret, rettype));
-    return true;
+    // Next operation has higher priority, do it first
+    unsigned char res;
+    vmtype_t* restype;
+    TRY(lux_compiler_expression_e(comp, closure, lux_operator_priority(&nextop), rval, rvtype, &res, &restype))
+    rval = res;
+    rvtype = restype;
+    // The next operation after is also higher priority (loop till we can break out)
+    lux_lexer_get_token(comp->lex, &nextop);
+    lux_lexer_unget_last_token(comp->lex);
   }
 
+  // If at least one value is a float promote the other to float too
   if(ltype == comp->vm->tfloat || rvtype == comp->vm->tfloat)
   {
-    unsigned char tr;
-    if(lux_compiler_try_cast(comp, closure, ltype, lv, comp->vm->tfloat, &tr))
+    unsigned char tempreg;
+    if(lux_compiler_try_cast(comp, closure, ltype, lreg, comp->vm->tfloat, &tempreg))
     {
       ltype = comp->vm->tfloat;
-      lv = tr;
+      lreg = tempreg;
     }
-    if(lux_compiler_try_cast(comp, closure, rvtype, rv, comp->vm->tfloat, &tr))
+    if(lux_compiler_try_cast(comp, closure, rvtype, rval, comp->vm->tfloat, &tempreg))
     {
       rvtype = comp->vm->tfloat;
-      rv = tr;
+      rval = tempreg;
     }
   }
 
-  if(ltype != rvtype)
+  unsigned char resreg;
+  unsigned char resop;
+  vmtype_t* restype;
+  TRY(lux_instruction_for_operator(comp->vm, ltype, rvtype, *op.buf, &resop, &restype))
+  TRY(lux_compiler_alloc_register_generic(comp, &resreg))
+
+  lux_vm_closure_append_byte(comp->vm, closure, resop);
+  lux_vm_closure_append_byte(comp->vm, closure, lreg);
+  lux_vm_closure_append_byte(comp->vm, closure, rval);
+  lux_vm_closure_append_byte(comp->vm, closure, resreg);
+
+  lux_compiler_free_register_generic(comp, lreg);
+  lux_compiler_free_register_generic(comp, rval);
+
+  *_retreg = rval = resreg;
+  *_rettype = rvtype = restype;
+
+  // If we're the first iteration check again for more
+  if(priority == -1)
   {
-    lux_vm_set_error_ss(comp->vm, "Incompatible types: '%s' '%s'", ltype->name, rvtype->name);
-    return false;
-  }
-
-  unsigned char rr;
-  TRY(lux_compiler_alloc_register_generic(comp, &rr));
-
-  lux_vm_closure_append_byte(comp->vm, closure, lux_instruction_for_operator(ltype == comp->vm->tint, *op.buf));
-  lux_vm_closure_append_byte(comp->vm, closure, lv);
-  lux_vm_closure_append_byte(comp->vm, closure, rv);
-  lux_vm_closure_append_byte(comp->vm, closure, rr);
-
-  lux_compiler_free_register_generic(comp, lv);
-  lux_compiler_free_register_generic(comp, rv);
-
-  *ret = rr;
-  *rettype = ltype;
-
-  lux_lexer_get_token(comp->lex, &op);
-  lux_lexer_unget_last_token(comp->lex);
-  switch(*op.buf)
-  {
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-    {
-      TRY(lux_compiler_expression_e(comp, closure, priority, rr, ltype, ret, rettype))
-    }
-    break;
-    default:
-    {
-      return true;
-    }
+    TRY(lux_compiler_expression_e(comp, closure, -1, rval, rvtype, _retreg, _rettype))
   }
 
   return true;
@@ -341,40 +342,38 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, bool
 // parse
 // Returns false on fatal error
 //-----------------------------------------------
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, unsigned char* ret, vmtype_t** rettype, vmtype_t* wishtype)
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype_t* wishtype, unsigned char* _retreg, vmtype_t** _rettype)
 {
+  // Get value
   token_t value;
   lux_lexer_get_token(comp->lex, &value);
 
-  unsigned char vr;
-  vmtype_t* vrtype;
-  TRY(lux_compiler_parse_value(comp, closure, &value, &vr, &vrtype))
+  unsigned char valr;
+  vmtype_t* valtype;
+  TRY(lux_compiler_parse_value(comp, closure, &value, &valr, &valtype))
 
-  token_t op;
-  lux_lexer_get_token(comp->lex, &op);
+  // Peek next op
+  token_t nextop;
+  lux_lexer_get_token(comp->lex, &nextop);
   lux_lexer_unget_last_token(comp->lex);
-  switch(*op.buf)
+  if(lux_operator_supported(&nextop))
   {
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-    {
-      TRY(lux_compiler_expression_e(comp, closure, false, vr, vrtype, ret, rettype))
-    }
-    break;
-    default:
-    {
-      *ret = vr;
-      *rettype = vrtype;
-    }
+    // We got a valid operator, recurse
+    TRY(lux_compiler_expression_e(comp, closure, -1, valr, valtype, _retreg, _rettype))
+  }
+  else
+  {
+    // Only single value, set out vars
+    *_retreg = valr;
+    *_rettype = valtype;
   }
 
+  // Try to cast to desired type
   unsigned char cr;
-  if(lux_compiler_try_cast(comp, closure, *rettype, *ret, wishtype, &cr))
+  if(lux_compiler_try_cast(comp, closure, *_rettype, *_retreg, wishtype, &cr))
   {
-    *ret = cr;
-    *rettype = wishtype;
+    *_retreg = cr;
+    *_rettype = wishtype;
   }
 
   return true;
@@ -419,12 +418,12 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         {
           unsigned char retvalue;
           vmtype_t* rettype;
-          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype, closure->rettype));
+          TRY(lux_compiler_expression(comp, closure, closure->rettype, &retvalue, &rettype));
 
           if(rettype != closure->rettype)
           {
-            lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
-            return false;
+            //lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
+            //return false;
           }
 
           lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
@@ -471,7 +470,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         {
           unsigned char retvalue;
           vmtype_t* rettype;
-          TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype, var->type));
+          TRY(lux_compiler_expression(comp, closure, var->type, &retvalue, &rettype));
 
           if(rettype != var->type)
           {
@@ -499,7 +498,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         TRY(lux_lexer_expect_token(comp->lex, '='))
         unsigned char retvalue;
         vmtype_t* rettype;
-        TRY(lux_compiler_expression(comp, closure, &retvalue, &rettype, v->type))
+        TRY(lux_compiler_expression(comp, closure, v->type, &retvalue, &rettype))
         
         if(rettype != v->type)
         {
