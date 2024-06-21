@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #define TRY(exp) if(!exp) {return false;}
+#define TRYMEM(exp) if(!exp) {lux_vm_set_error(comp->vm, "Compiler ran out of memory"); return false;}
 
 /*
  * Instructions are variable sized always being at least 1 byte
@@ -168,6 +169,7 @@ bool       lux_vm_register_native_function(vm_t* vm, const char* signature, bool
 closure_t* lux_vm_get_function_s(vm_t* vm, const char* name);
 closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name);
 
+bool lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size);
 void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte);
 void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i);
 void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f);

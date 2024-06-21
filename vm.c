@@ -373,16 +373,18 @@ closure_t* lux_vm_get_function_t(vm_t* vm, token_t* name)
 //-----------------------------------------------
 // Ensures there's enough space for 'size' bytes
 //-----------------------------------------------
-static void lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
+bool lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size)
 {
   if(closure->allocated - closure->used > size)
   {
-    return;
+    return true;
   }
 
   closure->allocated += 64;
 
   closure->code = xrealloc(vm, closure->code, closure->allocated);
+
+  return closure->code != NULL;
 }
 
 //-----------------------------------------------
