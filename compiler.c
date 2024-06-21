@@ -415,7 +415,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
       if(lux_token_is_str(&token, "if"))
       {
         TRY(lux_lexer_expect_token(comp->lex, '('))
-        unsigned char* resval;
+        unsigned char resval;
         vmtype_t* restype;
         TRY(lux_compiler_expression(comp, closure, comp->vm->tbool, &resval, &restype))
         TRY(lux_lexer_expect_token(comp->lex, ')'))
