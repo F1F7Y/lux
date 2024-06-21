@@ -12,7 +12,7 @@
  * General rule is the result is always stored in the last register
 */
 enum
-{            // Size |                      | Usage
+{            // Size | Byte usage           | Usage
   OP_NOP,    // 1    | <1op>                | No operation
   OP_LDI,    // 6    | <1op,1reg,4value>    | Load value into register
   OP_CALL,   // 2    | <1op,1reg>           | Call function
@@ -28,13 +28,14 @@ enum
   OP_DIVF,   // 4    | <1op,1reg,1reg,1reg> | Divide two floats
   OP_ITOF,   // 3    | <1op,1reg,1reg>      | Cast an int to a float
   OP_FTOI,   // 3    | <1op,1reg,1reg>      | Cast a float to an int
-  
   OP_EQI,    // 4    | <1op,1reg,1reg,1reg> | Checks if two ints are equal
   OP_LTI,    // 4    | <1op,1reg,1reg,1reg> | Checks if an int is smaller than the other int
   OP_MTI,    // 4    | <1op,1reg,1reg,1reg> | Checks if an int is larger than the other int
   OP_EQF,    // 4    | <1op,1reg,1reg,1reg> | Checks if two floats are equal
   OP_LTF,    // 4    | <1op,1reg,1reg,1reg> | Checks if an float is smaller than the other float
   OP_MTF,    // 4    | <1op,1reg,1reg,1reg> | Checks if an float is larger than the other float
+  OP_JMP,    // 5    | <1op,4offset>        | Set cursor to specified offset
+  OP_BEQZ,   // 6    | <1op,1reg,4offset>   | Set cursor to specified offset if the register is equal to 0
 };
 
 typedef struct lexer_s lexer_t;

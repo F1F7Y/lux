@@ -412,6 +412,34 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
     }
     else if(token.type == TT_NAME)
     {
+      if(lux_token_is_str(&token, "if"))
+      {
+        TRY(lux_lexer_expect_token(comp->lex, '('))
+        unsigned char* resval;
+        vmtype_t* restype;
+        TRY(lux_compiler_expression(comp, closure, comp->vm->tbool, &resval, &restype))
+        TRY(lux_lexer_expect_token(comp->lex, ')'))
+
+        if(restype != comp->vm->tbool)
+        {
+          lux_vm_set_error_s(comp->vm, "Expected type bool in if expression, got %s", restype->name);
+          return false;
+        }
+
+        lux_vm_closure_append_byte(comp->vm, closure, OP_BEQZ);
+        lux_vm_closure_append_byte(comp->vm, closure, resval);
+        int* offset = (int*)(closure->code + closure->used);
+        lux_vm_closure_append_int(comp->vm, closure, 0);
+
+        lux_compiler_free_register_generic(comp, resval);
+
+        TRY(lux_compiler_scope(comp, closure))
+
+        *offset = closure->used;
+
+        continue;
+      }
+
       if(lux_token_is_str(&token, "return"))
       {
         if(closure->rettype->can_be_variable)
@@ -422,8 +450,8 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
 
           if(rettype != closure->rettype)
           {
-            //lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
-            //return false;
+            lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
+            return false;
           }
 
           lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);

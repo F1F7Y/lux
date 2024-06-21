@@ -150,6 +150,23 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 4;
       }
       break;
+      case OP_JMP:
+      {
+        cursor = code + *(int*)(cursor + 1);
+      }
+      break;
+      case OP_BEQZ:
+      {
+        if(frame->r[*(unsigned char*)(cursor + 1)].ivalue == 0)
+        {
+          cursor = code + *(int*)(cursor + 2);
+        }
+        else
+        {
+          cursor += 6;
+        }
+      }
+      break;
       default:
       {
         lux_vm_set_error(frame->vm, "Unknown opcode");

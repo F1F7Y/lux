@@ -228,6 +228,21 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_JMP:
+      {
+        const int offset = *(int*)(cursor + 1);
+        printf("jmp    %d\n", offset);
+        cursor += 5;
+      }
+      break;
+      case OP_BEQZ:
+      {
+        const unsigned char r = *(unsigned char*)(cursor + 1);
+        const int offset = *(int*)(cursor + 2);
+        printf("beqz   %d %d\n", r, offset);
+        cursor += 6;
+      }
+      break;
       default:
       {
         printf("Unknown opcode %c\n", *cursor);
