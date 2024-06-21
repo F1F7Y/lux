@@ -103,7 +103,7 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
     vmtype_t* argtype;
     unsigned char reg;
     TRY(lux_compiler_expression(comp, closure, called->args[i], &reg, &argtype))
-    
+
     if(argtype != called->args[i])
     {
       lux_vm_set_error_ss(comp->vm, "Function expected argument of type %s, got %s instead", called->args[i]->name, argtype->name);
@@ -149,7 +149,7 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
       *rettype = var->type;
       return true;
     }
-    
+
     closure_t* c = lux_vm_get_function_t(comp->vm, value);
     if(c)
     {
@@ -463,7 +463,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         lux_vm_closure_append_byte(comp->vm, closure, OP_RET);
         continue;
       }
-      
+
       closure_t* f = lux_vm_get_function_t(comp->vm, &token);
       if(f != NULL)
       {
@@ -482,7 +482,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         lux_vm_closure_append_byte(comp->vm, closure, 0);
         continue;
       }
-      
+
       vmtype_t* t = lux_vm_get_type_t(comp->vm, &token);
       if(t != NULL)
       {
@@ -527,7 +527,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
         unsigned char retvalue;
         vmtype_t* rettype;
         TRY(lux_compiler_expression(comp, closure, v->type, &retvalue, &rettype))
-        
+
         if(rettype != v->type)
         {
           lux_vm_set_error_ss(comp->vm, "Can't assign '%s' to variable of type '%s'", rettype->name, v->type->name);
@@ -560,7 +560,7 @@ bool lux_compiler_compile_file(compiler_t* comp)
   while(lux_lexer_get_token(comp->lex, &dummy) != TT_EOF)
   {
     lux_compiler_clear_registers(comp);
-    
+
     lux_lexer_unget_last_token(comp->lex);
     token_t rettype;
     lux_lexer_get_token(comp->lex, &rettype);
@@ -570,8 +570,8 @@ bool lux_compiler_compile_file(compiler_t* comp)
       lux_vm_set_error(comp->vm, "Only function definitions can be at root level");
       return false;
     }
-    
-    vmtype_t* t = lux_vm_get_type_t(comp->vm, &rettype); 
+
+    vmtype_t* t = lux_vm_get_type_t(comp->vm, &rettype);
     if(t == NULL)
     {
       lux_vm_set_error_t(comp->vm, "Unknown return type: '%s'", &rettype);
@@ -614,7 +614,7 @@ bool lux_compiler_compile_file(compiler_t* comp)
         lux_vm_set_error(comp->vm, "Function argument missing name");
         return false;
       }
-      
+
       vmtype_t* vt = lux_vm_get_type_t(comp->vm, &type);
       if(!vt)
       {
@@ -639,7 +639,7 @@ bool lux_compiler_compile_file(compiler_t* comp)
         lux_vm_set_error(comp->vm, "A function can only have up to 12 arguments");
         return false;
       }
-      
+
       closure->args[closure->numargs] = vt;
       closure->numargs++;
 
@@ -778,7 +778,7 @@ bool lux_compiler_register_var(compiler_t* comp, vmtype_t* type, token_t* name, 
       return false;
     }
   }
-  
+
   if(comp->vc == 128)
   {
     lux_vm_set_error(comp->vm, "Maximum allowed number of local variables is 128");

@@ -26,7 +26,7 @@ typedef struct vm_s
   closure_t* functions;
   vmframe_t* frames;
 
-  xmemchunk_t* freemem; 
+  xmemchunk_t* freemem;
 } vm_t;
 
 bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize);

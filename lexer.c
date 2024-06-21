@@ -136,7 +136,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
     }
   }
   lex->cursor = c;
-  
+
   if(*lex->cursor == '\0')
   {
     token->type = TT_EOF;

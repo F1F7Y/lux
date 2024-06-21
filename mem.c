@@ -21,7 +21,7 @@ void* xalloc(vm_t* vm, unsigned int size)
   {
     if(m->size > size + sizeof(xmemchunk_t) + MINCHUNKMEM) // Avalible size is larger than required, cut into 2
     {
-      xmemchunk_t* n = (xmemchunk_t*)((char*)m + size + sizeof(xmemchunk_t)); 
+      xmemchunk_t* n = (xmemchunk_t*)((char*)m + size + sizeof(xmemchunk_t));
       n->size = m->size - size - sizeof(xmemchunk_t);
       n->next = m->next;
       if(l == NULL)
@@ -173,7 +173,7 @@ void xfree(vm_t* vm, void* ptr)
     if(f == (xmemchunk_t*)((char*)m - f->size - sizeof(xmemchunk_t)))
     {
       f->size += m->size + sizeof(xmemchunk_t);
-      
+
       if(l2 != NULL)
       {
         l2->next = m->next;
