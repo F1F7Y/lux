@@ -395,7 +395,7 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
 // Uses recursion for 'else if' and 'else' chains
 // Returns false on fatal error
 //-----------------------------------------------
-bool lux_compiler_if_statement(compiler_t* comp, closure_t* closure, bool conditional)
+bool lux_compiler_if_statement(compiler_t* comp, closure_t* closure)
 {
   // Parse expression
   TRY(lux_lexer_expect_token(comp->lex, '('))
@@ -435,7 +435,7 @@ bool lux_compiler_if_statement(compiler_t* comp, closure_t* closure, bool condit
     lux_lexer_get_token(comp->lex, &token);
     if(lux_token_is_str(&token, "if"))
     {
-      TRY(lux_compiler_if_statement(comp, closure, true));
+      TRY(lux_compiler_if_statement(comp, closure));
       *jmpoffset = closure->used;
       return true;
     }
@@ -451,6 +451,46 @@ bool lux_compiler_if_statement(compiler_t* comp, closure_t* closure, bool condit
     *jmpoffset = closure->used;
     lux_lexer_unget_last_token(comp->lex);
   }
+
+  return true;
+}
+
+//-----------------------------------------------
+// Parses a while statement
+// Returns false on fatal error
+//-----------------------------------------------
+bool lux_compiler_while_statement(compiler_t* comp, closure_t* closure)
+{
+  int start = closure->used;
+  
+  // Parse expression
+  TRY(lux_lexer_expect_token(comp->lex, '('))
+  unsigned char resval;
+  vmtype_t* restype;
+  TRY(lux_compiler_expression(comp, closure, comp->vm->tbool, &resval, &restype))
+  TRY(lux_lexer_expect_token(comp->lex, ')'))
+
+  if(restype != comp->vm->tbool)
+  {
+    lux_vm_set_error_s(comp->vm, "Expected type bool in if expression, got %s", restype->name);
+    return false;
+  }
+
+  TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 6));
+  lux_vm_closure_append_byte(comp->vm, closure, OP_BEQZ);
+  lux_vm_closure_append_byte(comp->vm, closure, resval);
+  int* beqzoffset = (int*)(closure->code + closure->used);
+  lux_vm_closure_append_int(comp->vm, closure, 0);
+
+  lux_compiler_free_register_generic(comp, resval);
+
+  TRY(lux_compiler_scope(comp, closure))
+
+  TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 5));
+  lux_vm_closure_append_byte(comp->vm, closure, OP_JMP);
+  lux_vm_closure_append_int(comp->vm, closure, start);
+
+  *beqzoffset = closure->used;
 
   return true;
 }
@@ -490,11 +530,15 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
     {
       if(lux_token_is_str(&token, "if"))
       {
-        TRY(lux_compiler_if_statement(comp, closure, true))
+        TRY(lux_compiler_if_statement(comp, closure))
         continue;
       }
-
-      if(lux_token_is_str(&token, "return"))
+      else if(lux_token_is_str(&token, "while"))
+      {
+        TRY(lux_compiler_while_statement(comp, closure))
+        continue;
+      }
+      else if(lux_token_is_str(&token, "return"))
       {
         if(closure->rettype->can_be_variable)
         {
