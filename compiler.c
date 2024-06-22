@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
+static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype_t* wishtype, unsigned char* _retreg, vmtype_t** _rettype);
+static bool lux_compiler_scope(compiler_t* comp, closure_t* closure);
+
 //-----------------------------------------------
 // Initilazes the compiler_t struct
 //-----------------------------------------------
@@ -88,8 +91,6 @@ static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rt
   lux_vm_set_error_ss(vm, "Unknown operation for types %s %s", ltype->name, rtype->name);
   return false;
 }
-
-static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype_t* wishtype, unsigned char* _retreg, vmtype_t** _rettype);
 
 //-----------------------------------------------
 // Parses arguments for a function call
@@ -390,6 +391,71 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
 }
 
 //-----------------------------------------------
+// Parses an if statement
+// Uses recursion for 'else if' and 'else' chains
+// Returns false on fatal error
+//-----------------------------------------------
+bool lux_compiler_if_statement(compiler_t* comp, closure_t* closure, bool conditional)
+{
+  // Parse expression
+  TRY(lux_lexer_expect_token(comp->lex, '('))
+  unsigned char resval;
+  vmtype_t* restype;
+  TRY(lux_compiler_expression(comp, closure, comp->vm->tbool, &resval, &restype))
+  TRY(lux_lexer_expect_token(comp->lex, ')'))
+
+  if(restype != comp->vm->tbool)
+  {
+    lux_vm_set_error_s(comp->vm, "Expected type bool in if expression, got %s", restype->name);
+    return false;
+  }
+
+  TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 6));
+  lux_vm_closure_append_byte(comp->vm, closure, OP_BEQZ);
+  lux_vm_closure_append_byte(comp->vm, closure, resval);
+  int* beqzoffset = (int*)(closure->code + closure->used);
+  lux_vm_closure_append_int(comp->vm, closure, 0);
+
+  lux_compiler_free_register_generic(comp, resval);
+
+  TRY(lux_compiler_scope(comp, closure))
+
+  TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 5));
+  lux_vm_closure_append_byte(comp->vm, closure, OP_JMP);
+  int* jmpoffset = (int*)(closure->code + closure->used);
+  lux_vm_closure_append_int(comp->vm, closure, 0);
+
+  *beqzoffset = closure->used;
+
+  // Check for chain
+  token_t token;
+  lux_lexer_get_token(comp->lex, &token);
+  if(lux_token_is_str(&token, "else"))
+  {
+    lux_lexer_get_token(comp->lex, &token);
+    if(lux_token_is_str(&token, "if"))
+    {
+      TRY(lux_compiler_if_statement(comp, closure, true));
+      *jmpoffset = closure->used;
+      return true;
+    }
+    else
+    {
+      lux_lexer_unget_last_token(comp->lex);
+    }
+    TRY(lux_compiler_scope(comp, closure))
+    *jmpoffset = closure->used;
+  }
+  else
+  {
+    *jmpoffset = closure->used;
+    lux_lexer_unget_last_token(comp->lex);
+  }
+
+  return true;
+}
+
+//-----------------------------------------------
 // Parses an entire scope from { to }
 // Returns false on fatal error
 //-----------------------------------------------
@@ -424,30 +490,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
     {
       if(lux_token_is_str(&token, "if"))
       {
-        TRY(lux_lexer_expect_token(comp->lex, '('))
-        unsigned char resval;
-        vmtype_t* restype;
-        TRY(lux_compiler_expression(comp, closure, comp->vm->tbool, &resval, &restype))
-        TRY(lux_lexer_expect_token(comp->lex, ')'))
-
-        if(restype != comp->vm->tbool)
-        {
-          lux_vm_set_error_s(comp->vm, "Expected type bool in if expression, got %s", restype->name);
-          return false;
-        }
-
-        TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 6));
-        lux_vm_closure_append_byte(comp->vm, closure, OP_BEQZ);
-        lux_vm_closure_append_byte(comp->vm, closure, resval);
-        int* offset = (int*)(closure->code + closure->used);
-        lux_vm_closure_append_int(comp->vm, closure, 0);
-
-        lux_compiler_free_register_generic(comp, resval);
-
-        TRY(lux_compiler_scope(comp, closure))
-
-        *offset = closure->used;
-
+        TRY(lux_compiler_if_statement(comp, closure, true))
         continue;
       }
 

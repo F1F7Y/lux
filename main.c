@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     printf("Failed to get function: 'main'\n");
     return 0;
   }
-
+  
   printf("Running 'main'\n");
   vmregister_t ret;
   if(!lux_vm_call_function(&vm, fp, &ret))

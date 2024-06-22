@@ -47,7 +47,7 @@ void lux_debug_dump_code(closure_t* closure)
 
   while(cursor < code_end)
   {
-    printf("  ");
+    printf("%4ld  ", cursor - code);
     switch(*cursor)
     {
       case OP_NOP:
