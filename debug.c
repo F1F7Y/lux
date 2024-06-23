@@ -116,6 +116,15 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_MOD:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("mod    %d %d %d  // r[%d] <- r[%d] / r[%d]\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
       case OP_RET:
       {
         printf("ret\n");

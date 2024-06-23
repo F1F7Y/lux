@@ -41,6 +41,12 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 2;
       }
       break;
+      case OP_RET:
+      {
+        //printf("Function %s returning %d (%f)\n", frame->closure->name, frame->r[0].ivalue, frame->r[0].fvalue);
+        return true;
+      }
+      break;
       case OP_MOV:
       {
         frame->r[*(unsigned char*)(cursor + 2)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue;
@@ -72,12 +78,14 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 4;
       }
       break;
-      case OP_RET:
+      case OP_MOD:
       {
-        //printf("Function %s returning %d (%f)\n", frame->closure->name, frame->r[0].ivalue, frame->r[0].fvalue);
-        return true;
+        assert(frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue % frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
       }
-      break;case OP_ITOF:
+      break;
+      case OP_ITOF:
       {
         frame->r[*(unsigned char*)(cursor + 2)].fvalue = (float)frame->r[*(unsigned char*)(cursor + 1)].ivalue;
         cursor += 3;

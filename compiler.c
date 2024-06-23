@@ -29,6 +29,7 @@ static bool lux_operator_supported(token_t* token)
     case '-':
     case '*':
     case '/':
+    case '%':
     case '<':
     case '>':
       return token->type == TT_TOKEN;
@@ -51,6 +52,7 @@ static int lux_operator_priority(token_t* token)
       return 1;
     case '*':
     case '/':
+    case '%':
       return 2;
   }
 
@@ -71,6 +73,7 @@ static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rt
       case '-': *_op = OP_SUBI; *_type = vm->tint; return true;
       case '*': *_op = OP_MULI; *_type = vm->tint; return true;
       case '/': *_op = OP_DIVI; *_type = vm->tint; return true;
+      case '%': *_op = OP_MOD; *_type = vm->tint; return true;
       case '<': *_op = OP_LTI; *_type = vm->tbool; return true;
       case '>': *_op = OP_MTI; *_type = vm->tbool; return true;
     }

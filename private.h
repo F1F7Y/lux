@@ -23,6 +23,7 @@ enum
   OP_SUBI,   // 4    | <1op,1reg,1reg,1reg> | Subtract two integers
   OP_MULI,   // 4    | <1op,1reg,1reg,1reg> | Multiply two integers
   OP_DIVI,   // 4    | <1op,1reg,1reg,1reg> | Divide two integers
+  OP_MOD,    // 4    | <1op,1reg,1reg,1reg> | Remainder two integers
   OP_ADDF,   // 4    | <1op,1reg,1reg,1reg> | Add two floats
   OP_SUBF,   // 4    | <1op,1reg,1reg,1reg> | Subtract two floats
   OP_MULF,   // 4    | <1op,1reg,1reg,1reg> | Multiply two floats
