@@ -603,6 +603,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
     {
       lux_lexer_unget_last_token(comp->lex);
       TRY(lux_compiler_scope(comp, closure))
+      continue;
     }
     else if(lux_token_is_c(&token, '}'))
     {
