@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "public.h"
 #include "private.h"
@@ -61,6 +62,8 @@ int main(int argc, char* argv[])
     printf("Failed to get function: 'main'\n");
     return 0;
   }
+
+  const clock_t start = clock();
   
   printf("Running 'main'\n");
   vmregister_t ret;
@@ -69,6 +72,11 @@ int main(int argc, char* argv[])
     printf("Error running code: %s\n", vm.lasterror);
   }
   printf("main returned: %d\n", ret.ivalue);
+
+  const clock_t end = clock();
+  printf("Execution took %ld msec\n", (end - start) / (CLOCKS_PER_SEC / 1000));
+
+
 #endif
   {
 #if 0
