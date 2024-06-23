@@ -162,7 +162,7 @@ void lux_debug_dump_code(closure_t* closure)
       {
         const unsigned char lv = *(unsigned char*)(cursor + 1);
         const unsigned char rv = *(unsigned char*)(cursor + 2);
-        printf("itof %d %d  // r[%d] <- (float)r[%d]\n", lv, rv, rv, lv);
+        printf("itof   %d %d  // r[%d] <- (float)r[%d]\n", lv, rv, rv, lv);
         cursor += 3;
       }
       break;
@@ -170,7 +170,7 @@ void lux_debug_dump_code(closure_t* closure)
       {
         const unsigned char lv = *(unsigned char*)(cursor + 1);
         const unsigned char rv = *(unsigned char*)(cursor + 2);
-        printf("ftoi %d %d  // r[%d] <- (int)r[%d]\n", lv, rv, rv, lv);
+        printf("ftoi   %d %d  // r[%d] <- (int)r[%d]\n", lv, rv, rv, lv);
         cursor += 3;
       }
       break;
