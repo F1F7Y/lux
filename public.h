@@ -19,6 +19,9 @@ typedef union vmregister_u
 typedef struct vm_s
 {
   char lasterror[256];
+  int errorline;
+  int errorcolumn;
+
   vmtype_t* types;
   vmtype_t* tint;   // Asigned to TT_INT tokens
   vmtype_t* tfloat; // Asigned to TT_FLOAT tokens

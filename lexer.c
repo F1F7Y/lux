@@ -208,7 +208,42 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
       }
     }
   }
-
+  
+  if(token->type == TT_TOKEN)
+  {
+    switch(*token->buf)
+    {
+      case '+': token->type = TT_PLUS; break;
+      case '-': token->type = TT_MINUS; break;
+      case '*': token->type = TT_MULT; break;
+      case '/': token->type = TT_DIV; break;
+      case '%': token->type = TT_MOD; break;
+      case '<': token->type = TT_LESS; break;
+      case '>': token->type = TT_MORE; break;
+      case '=':
+      {
+        token->type = TT_ASIGN; 
+        if(*c == '=')
+        {
+          token->type = TT_EQUALS;
+          token->length++;
+          c++;
+        }
+      }
+      break;
+      case '!':
+      { 
+        if(*c == '=')
+        {
+          token->type = TT_NOTEQUALS;
+          token->length++;
+          c++;
+        }
+      }
+      break;
+    }
+  }
+  
   lex->cursor = c;
 
   lux_lexer_token_check_float(lex, token);

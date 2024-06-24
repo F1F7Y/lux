@@ -42,7 +42,9 @@ int main(int argc, char* argv[])
 
     if(!lux_vm_load(&vm, buf))
     {
-      printf("Failed to compile %s with error: %s\n", file, vm.lasterror);
+      printf("Failed to compile '%s'\n", file);
+      printf("At line: %d column: %d\n", vm.errorline, vm.errorcolumn);
+      printf("Error: %s\n", vm.lasterror);
       return 0;
     }
 
@@ -60,7 +62,7 @@ int main(int argc, char* argv[])
   if(!fp)
   {
     printf("Failed to get function: 'main'\n");
-    return 0;
+    goto ret;
   }
 
   const clock_t start = clock();
@@ -78,39 +80,10 @@ int main(int argc, char* argv[])
 
 
 #endif
+ret:
+  for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
   {
-#if 0
-    for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
-    {
-      printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
-    }
-
-    printf("alloc start\n");
-
-    void* ptrs[16];
-
-    for(int i = 0; i < 16; i++)
-    {
-      ptrs[i] = xalloc(&vm, 100);
-    }
-    for(int i = 0; i < 16; i++)
-    {
-      if(i % 5 == 0) continue;
-      xfree(&vm, ptrs[i]);
-    }
-
-    for(int i = 0; i < 16; i++)
-    {
-      if(i % 5 != 0) continue;
-      xfree(&vm, ptrs[i]);
-    }
-
-    printf("alloc end\n");
-#endif
-    for(xmemchunk_t* m = vm.freemem; m != NULL; m = m->next)
-    {
-      printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
-    }
+    printf("MEMCHUNK: %p size: %d next: %p\n", m, m->size, m->next);
   }
   return 0;
 }

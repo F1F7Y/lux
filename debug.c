@@ -192,6 +192,33 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_NEQI:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("neqi   %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_EQF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("eqf    %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_NEQF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("neqf   %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
       case OP_LTI:
       {
         const unsigned char lv = *(unsigned char*)(cursor + 1);
@@ -207,15 +234,6 @@ void lux_debug_dump_code(closure_t* closure)
         const unsigned char rv = *(unsigned char*)(cursor + 2);
         const unsigned char res = *(unsigned char*)(cursor + 3);
         printf("mti    %d %d %d  // r[%d] <- (bool)(r[%d] > r[%d])\n", lv, rv, res, res, lv, rv);
-        cursor += 4;
-      }
-      break;
-      case OP_EQF:
-      {
-        const unsigned char lv = *(unsigned char*)(cursor + 1);
-        const unsigned char rv = *(unsigned char*)(cursor + 2);
-        const unsigned char res = *(unsigned char*)(cursor + 3);
-        printf("eqf    %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;

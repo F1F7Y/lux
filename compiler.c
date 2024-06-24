@@ -23,16 +23,18 @@ void lux_compiler_init(compiler_t* comp, vm_t* vm, lexer_t* lex)
 //-----------------------------------------------
 static bool lux_operator_supported(token_t* token)
 {
-  switch(*token->buf)
+  switch(token->type)
   {
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-    case '%':
-    case '<':
-    case '>':
-      return token->type == TT_TOKEN;
+    case TT_PLUS:
+    case TT_MINUS:
+    case TT_MULT:
+    case TT_DIV:
+    case TT_MOD:
+    case TT_LESS:
+    case TT_MORE:
+    case TT_EQUALS:
+    case TT_NOTEQUALS:
+      return true;
   }
   return false;
 }
@@ -42,18 +44,21 @@ static bool lux_operator_supported(token_t* token)
 //-----------------------------------------------
 static int lux_operator_priority(token_t* token)
 {
-  switch(*token->buf)
+  switch(token->type)
   {
-    case '<':
-    case '>':
+    case TT_EQUALS:
+    case TT_NOTEQUALS:
       return 0;
-    case '+':
-    case '-':
+    case TT_LESS:
+    case TT_MORE:
       return 1;
-    case '*':
-    case '/':
-    case '%':
+    case TT_PLUS:
+    case TT_MINUS:
       return 2;
+    case TT_MULT:
+    case TT_DIV:
+    case TT_MOD:
+      return 3;
   }
 
   return 0;
@@ -63,31 +68,43 @@ static int lux_operator_priority(token_t* token)
 // Returns a opcode for an operator
 // Returns false on fatal error
 //-----------------------------------------------
-static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rtype, char operator, unsigned char* _op, vmtype_t** _type)
+static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rtype, token_t* operator, unsigned char* _op, vmtype_t** _type)
 {
   if(ltype == vm->tint && rtype == vm->tint)
   {
-    switch(operator)
+    switch(operator->type)
     {
-      case '+': *_op = OP_ADDI; *_type = vm->tint; return true;
-      case '-': *_op = OP_SUBI; *_type = vm->tint; return true;
-      case '*': *_op = OP_MULI; *_type = vm->tint; return true;
-      case '/': *_op = OP_DIVI; *_type = vm->tint; return true;
-      case '%': *_op = OP_MOD; *_type = vm->tint; return true;
-      case '<': *_op = OP_LTI; *_type = vm->tbool; return true;
-      case '>': *_op = OP_MTI; *_type = vm->tbool; return true;
+      case TT_PLUS: *_op = OP_ADDI; *_type = vm->tint; return true;
+      case TT_MINUS: *_op = OP_SUBI; *_type = vm->tint; return true;
+      case TT_MULT: *_op = OP_MULI; *_type = vm->tint; return true;
+      case TT_DIV: *_op = OP_DIVI; *_type = vm->tint; return true;
+      case TT_MOD: *_op = OP_MOD; *_type = vm->tint; return true;
+      case TT_LESS: *_op = OP_LTI; *_type = vm->tbool; return true;
+      case TT_MORE: *_op = OP_MTI; *_type = vm->tbool; return true;
+      case TT_EQUALS: *_op = OP_EQI; *_type = vm->tbool; return true;
+      case TT_NOTEQUALS: *_op = OP_NEQI; *_type = vm->tbool; return true;
     }
   }
   else if(ltype == vm->tfloat && rtype == vm->tfloat)
   {
-    switch(operator)
+    switch(operator->type)
     {
-      case '+': *_op = OP_ADDF; *_type = vm->tfloat; return true;
-      case '-': *_op = OP_SUBF; *_type = vm->tfloat; return true;
-      case '*': *_op = OP_MULF; *_type = vm->tfloat; return true;
-      case '/': *_op = OP_DIVF; *_type = vm->tfloat; return true;
-      case '<': *_op = OP_LTF; *_type = vm->tbool; return true;
-      case '>': *_op = OP_MTF; *_type = vm->tbool; return true;
+      case TT_PLUS: *_op = OP_ADDF; *_type = vm->tfloat; return true;
+      case TT_MINUS: *_op = OP_SUBF; *_type = vm->tfloat; return true;
+      case TT_MULT: *_op = OP_MULF; *_type = vm->tfloat; return true;
+      case TT_DIV: *_op = OP_DIVF; *_type = vm->tfloat; return true;
+      case TT_LESS: *_op = OP_LTF; *_type = vm->tbool; return true;
+      case TT_MORE: *_op = OP_MTF; *_type = vm->tbool; return true;
+      case TT_EQUALS: *_op = OP_EQF; *_type = vm->tbool; return true;
+      case TT_NOTEQUALS: *_op = OP_NEQF; *_type = vm->tbool; return true;
+    }
+  }
+  else if(ltype == vm->tbool && rtype == vm->tbool)
+  {
+    switch(operator->type)
+    {
+      case TT_EQUALS: *_op = OP_EQI; *_type = vm->tbool; return true;
+      case TT_NOTEQUALS: *_op = OP_NEQI; *_type = vm->tbool; return true;
     }
   }
 
@@ -139,7 +156,7 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
 //-----------------------------------------------
 static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token_t* value, unsigned char* ret, vmtype_t** rettype)
 {
-  if(*value->buf == '(')
+  if(lux_token_is_c(value, '('))
   {
     TRY(lux_compiler_expression(comp, closure, NULL, ret, rettype, false))
     TRY(lux_lexer_expect_token(comp->lex, ')'))
@@ -320,7 +337,7 @@ static bool lux_compiler_expression_e(compiler_t* comp, closure_t* closure, int 
   unsigned char resreg;
   unsigned char resop;
   vmtype_t* restype;
-  TRY(lux_instruction_for_operator(comp->vm, ltype, rvtype, *op.buf, &resop, &restype))
+  TRY(lux_instruction_for_operator(comp->vm, ltype, rvtype, &op, &resop, &restype))
   TRY(lux_compiler_alloc_register_generic(comp, &resreg))
 
   TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 4));
@@ -366,7 +383,7 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
     token_t nextop;
     lux_lexer_get_token(comp->lex, &nextop);
 
-    if(lux_token_is_c(&nextop, '='))
+    if(nextop.type == TT_ASIGN)
     {
       TRY(lux_compiler_expression(comp, closure, var->type, &valr, &valtype, false));
 
@@ -399,7 +416,7 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
     }
 
     vmtype_t* type = lux_vm_get_type_t(comp->vm, &value);
-    if(!type)
+    if(value.type != TT_NAME || type == NULL)
     {
       lux_vm_set_error_t(comp->vm, "Expected expression, got %s", &value);
       return false;
@@ -419,7 +436,7 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
     token_t nextop;
     lux_lexer_get_token(comp->lex, &nextop);
 
-    if(!lux_token_is_c(&nextop, '='))
+    if(nextop.type != TT_ASIGN)
     {
       if(!lux_operator_supported(&nextop))
       {

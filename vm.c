@@ -32,6 +32,9 @@ static bool callback_printbool(vm_t* vm, vmframe_t* frame)
 bool lux_vm_init(vm_t* vm, char* mem, unsigned int memsize)
 {
   memset(vm->lasterror, 0, 256);
+  vm->errorline = 0;
+  vm->errorcolumn = 0;
+  
   vm->types = NULL;
   vm->functions = NULL;
   vm->frames = NULL;
@@ -72,7 +75,13 @@ bool lux_vm_load(vm_t* vm, char* buf)
 
   compiler_t comp;
   lux_compiler_init(&comp, vm, &lexer);
-  TRY(lux_compiler_compile_file(&comp));
+  if(!lux_compiler_compile_file(&comp))
+  {
+    vm->errorline = lexer.line;
+    vm->errorcolumn = lexer.column;
+  }
+
+  printf("EEENNNNDDD: %d %d\n", lexer.line, lexer.column);
 
   return true;
 }

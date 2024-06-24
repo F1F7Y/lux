@@ -31,9 +31,11 @@ enum
   OP_ITOF,   // 3    | <1op,1reg,1reg>      | Cast an int to a float
   OP_FTOI,   // 3    | <1op,1reg,1reg>      | Cast a float to an int
   OP_EQI,    // 4    | <1op,1reg,1reg,1reg> | Checks if two ints are equal
+  OP_NEQI,   // 4    | <1op,1reg,1reg,1reg> | Checks if two ints are not equal
+  OP_EQF,    // 4    | <1op,1reg,1reg,1reg> | Checks if two floats are equal
+  OP_NEQF,   // 4    | <1op,1reg,1reg,1reg> | Checks if two floats are not equal
   OP_LTI,    // 4    | <1op,1reg,1reg,1reg> | Checks if an int is smaller than the other int
   OP_MTI,    // 4    | <1op,1reg,1reg,1reg> | Checks if an int is larger than the other int
-  OP_EQF,    // 4    | <1op,1reg,1reg,1reg> | Checks if two floats are equal
   OP_LTF,    // 4    | <1op,1reg,1reg,1reg> | Checks if an float is smaller than the other float
   OP_MTF,    // 4    | <1op,1reg,1reg,1reg> | Checks if an float is larger than the other float
   OP_JMP,    // 5    | <1op,4offset>        | Set cursor to specified offset
@@ -56,15 +58,15 @@ typedef struct cpvar_s
 enum
 {
   RS_NOT_USED = 0, // Register isn't being used
-  RS_VARIABLE, // Register is used by a variable
-  RS_GENERIC,  // Register is used for generic operations
+  RS_VARIABLE,     // Register is used by a variable
+  RS_GENERIC,      // Register is used for generic operations
 };
 
 typedef struct compiler_s
 {
   vm_t* vm;     // vm that owns us
   lexer_t* lex; // Lexer for the file we're compiling
-  int r[256];  // Keeps track of in use registers
+  int r[256];   // Keeps track of in use registers
   int z;        // Counts nested scopes
   cpvar_t vars[128]; // Local vars;
   int vc;       // Number of vars
@@ -89,7 +91,19 @@ enum
 {
   TT_EOF,   // End of file
   TT_NAME,  // Multi character name
-  TT_TOKEN, // Single character token ( eg '!' or '<' )
+  TT_TOKEN, // Single character token
+  // Operators
+  TT_PLUS,      // +
+  TT_MINUS,     // -
+  TT_MULT,      // *
+  TT_DIV,       // /
+  TT_MOD,       // %
+  TT_LESS,      // <
+  TT_MORE,      // >
+  TT_ASIGN,     // =
+  TT_EQUALS,    // ==
+  TT_NOTEQUALS, // !=
+  // Literals
   TT_INT,   // Integer
   TT_FLOAT, // Float
   TT_BOOL,  // Boolean
