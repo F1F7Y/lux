@@ -687,6 +687,45 @@ bool lux_compiler_for_statement(compiler_t* comp, closure_t* closure)
 }
 
 //-----------------------------------------------
+// Parses a return statement
+// Returns false on fatal error
+//-----------------------------------------------
+bool lux_compiler_return_statement(compiler_t* comp, closure_t* closure)
+{
+  if(closure->rettype->can_be_variable)
+  {
+    unsigned char retvalue;
+    vmtype_t* rettype;
+    TRY(lux_compiler_expression(comp, closure, closure->rettype, &retvalue, &rettype, false));
+
+    unsigned char possiblecast;
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 3));
+    if(lux_compiler_try_cast(comp, closure, rettype, retvalue, closure->rettype, &possiblecast))
+    {
+      rettype = closure->rettype;
+      retvalue = possiblecast;
+    }
+
+    if(rettype != closure->rettype)
+    {
+      lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
+      return false;
+    }
+
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 3));
+    lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
+    lux_vm_closure_append_byte(comp->vm, closure, retvalue);
+    lux_vm_closure_append_byte(comp->vm, closure, 0);
+
+    lux_compiler_free_register_generic(comp, retvalue);
+  }
+
+  TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 1));
+  lux_vm_closure_append_byte(comp->vm, closure, OP_RET);
+  return true;
+}
+
+//-----------------------------------------------
 // Parses an entire scope from { to }
 // Returns false on fatal error
 //-----------------------------------------------
@@ -727,35 +766,7 @@ static bool lux_compiler_scope(compiler_t* comp, closure_t* closure)
     }
     else if(lux_token_is_str(&token, "return"))
     {
-      if(closure->rettype->can_be_variable)
-      {
-        unsigned char retvalue;
-        vmtype_t* rettype;
-        TRY(lux_compiler_expression(comp, closure, closure->rettype, &retvalue, &rettype, false));
-
-        unsigned char possiblecast;
-        TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 3));
-        if(lux_compiler_try_cast(comp, closure, rettype, retvalue, closure->rettype, &possiblecast))
-        {
-          rettype = closure->rettype;
-          retvalue = possiblecast;
-        }
-
-        if(rettype != closure->rettype)
-        {
-          lux_vm_set_error_ss(comp->vm, "Incompatible return type '%s' for function '%s'", rettype->name, closure->name);
-          return false;
-        }
-
-        TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 3));
-        lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
-        lux_vm_closure_append_byte(comp->vm, closure, retvalue);
-        lux_vm_closure_append_byte(comp->vm, closure, 0);
-
-        lux_compiler_free_register_generic(comp, retvalue);
-      }
-      TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 1));
-      lux_vm_closure_append_byte(comp->vm, closure, OP_RET);
+      TRY(lux_compiler_return_statement(comp, closure))
       continue;
     }
     else
