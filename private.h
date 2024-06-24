@@ -144,7 +144,7 @@ typedef struct closure_s
   int numargs;
   vmtype_t* args[12];
   int index;
-  char* code;
+  unsigned char* code;
   int used;
   int allocated;
   closure_t* next;
@@ -174,6 +174,7 @@ bool lux_vm_closure_ensure_free(vm_t* vm, closure_t* closure, int size);
 void lux_vm_closure_append_byte(vm_t* vm, closure_t* closure, unsigned char byte);
 void lux_vm_closure_append_int(vm_t* vm, closure_t* closure, int i);
 void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f);
+void lux_vm_closure_append_bytes(vm_t* vm, closure_t* closure, unsigned char* bytes, int num);
 bool lux_vm_closure_last_byte_is(vm_t* vm, closure_t* closure, char b);
 void lux_vm_closure_finish(vm_t* vm, closure_t* closure);
 

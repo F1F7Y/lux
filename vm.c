@@ -418,6 +418,19 @@ void lux_vm_closure_append_float(vm_t* vm, closure_t* closure, float f)
 }
 
 //-----------------------------------------------
+// Appends multiple bytes into a closure stream
+//-----------------------------------------------
+void lux_vm_closure_append_bytes(vm_t* vm, closure_t* closure, unsigned char* bytes, int num)
+{
+  lux_vm_closure_ensure_free(vm, closure, num);
+  for(int i = 0; i < num; i++)
+  {
+    *(unsigned char*)(closure->code + closure->used) = bytes[i];
+    closure->used++;
+  }
+}
+
+//-----------------------------------------------
 // Returns true if the last byte in a closure
 // stream is 'b'
 //-----------------------------------------------

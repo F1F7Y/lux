@@ -41,9 +41,9 @@ void lux_debug_dump_code(closure_t* closure)
     return;
   }
 
-  char* code = closure->code;
-  char* cursor = code;
-  char* code_end = code + closure->used;
+  unsigned char* code = closure->code;
+  unsigned char* cursor = code;
+  unsigned char* code_end = code + closure->used;
 
   while(cursor < code_end)
   {

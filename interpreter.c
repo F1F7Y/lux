@@ -8,9 +8,9 @@
 //-----------------------------------------------
 bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
 {
-  char* code = frame->closure->code;
-  char* cursor = code;
-  char* code_end = code + frame->closure->used;
+  unsigned char* code = frame->closure->code;
+  unsigned char* cursor = code;
+  unsigned char* code_end = code + frame->closure->used;
 
   while(cursor < code_end)
   {
