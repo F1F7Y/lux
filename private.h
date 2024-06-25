@@ -42,6 +42,8 @@ enum
   OP_LTEF,   // 4    | <1op,1reg,1reg,1reg> | Checks if an float is smaller or equals the other float
   OP_MTF,    // 4    | <1op,1reg,1reg,1reg> | Checks if an float is larger than the other float
   OP_MTEF,   // 4    | <1op,1reg,1reg,1reg> | Checks if an float is larger or equals the other float
+  OP_LAND,   // 4    | <1op,1reg,1reg,1reg> | Logican AND
+  OP_LOR,    // 4    | <1op,1reg,1reg,1reg> | Logican OR
   OP_JMP,    // 5    | <1op,4offset>        | Set cursor to specified offset
   OP_BEQZ,   // 6    | <1op,1reg,4offset>   | Set cursor to specified offset if the register is equal to 0
 };
@@ -108,6 +110,8 @@ enum
   TT_MOREEQ,    // >=
   TT_EQUALS,    // ==
   TT_NOTEQUALS, // !=
+  TT_LOGICAND,  // &&
+  TT_LOGICOR,   // ||
   TT_ASIGN,     // =
   // Literals
   TT_INT,   // Integer

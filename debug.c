@@ -291,6 +291,24 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_LAND:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("land   %d %d %d  // r[%d] <- (bool)(r[%d] >= r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_LOR:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("lor    %d %d %d  // r[%d] <- (bool)(r[%d] >= r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
       case OP_JMP:
       {
         const int offset = *(int*)(cursor + 1);

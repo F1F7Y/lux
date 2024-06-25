@@ -172,25 +172,37 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
       break;
       case OP_LTF:
       {
-        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue < frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue < frame->r[*(unsigned char*)(cursor + 2)].fvalue);
         cursor += 4;
       }
       break;
       case OP_LTEF:
       {
-        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue <= frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue <= frame->r[*(unsigned char*)(cursor + 2)].fvalue);
         cursor += 4;
       }
       break;
       case OP_MTF:
       {
-        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue > frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue > frame->r[*(unsigned char*)(cursor + 2)].fvalue);
         cursor += 4;
       }
       break;
       case OP_MTEF:
       {
-        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue >= frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue >= frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        cursor += 4;
+      }
+      break;
+      case OP_LAND:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue && frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        cursor += 4;
+      }
+      break;
+      case OP_LOR:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue || frame->r[*(unsigned char*)(cursor + 2)].ivalue);
         cursor += 4;
       }
       break;

@@ -261,6 +261,26 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         }
       }
       break;
+      case '&':
+      { 
+        if(*c == '&')
+        {
+          token->type = TT_LOGICAND;
+          token->length++;
+          c++;
+        }
+      }
+      break;
+      case '|':
+      { 
+        if(*c == '|')
+        {
+          token->type = TT_LOGICOR;
+          token->length++;
+          c++;
+        }
+      }
+      break;
     }
   }
   
