@@ -197,7 +197,7 @@ void lux_debug_dump_code(closure_t* closure)
         const unsigned char lv = *(unsigned char*)(cursor + 1);
         const unsigned char rv = *(unsigned char*)(cursor + 2);
         const unsigned char res = *(unsigned char*)(cursor + 3);
-        printf("neqi   %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        printf("neqi   %d %d %d  // r[%d] <- (bool)(r[%d] != r[%d])\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
@@ -215,7 +215,7 @@ void lux_debug_dump_code(closure_t* closure)
         const unsigned char lv = *(unsigned char*)(cursor + 1);
         const unsigned char rv = *(unsigned char*)(cursor + 2);
         const unsigned char res = *(unsigned char*)(cursor + 3);
-        printf("neqf   %d %d %d  // r[%d] <- (bool)(r[%d] == r[%d])\n", lv, rv, res, res, lv, rv);
+        printf("neqf   %d %d %d  // r[%d] <- (bool)(r[%d] != r[%d])\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
@@ -228,12 +228,30 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_LTEI:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("ltei   %d %d %d  // r[%d] <- (bool)(r[%d] <= r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
       case OP_MTI:
       {
         const unsigned char lv = *(unsigned char*)(cursor + 1);
         const unsigned char rv = *(unsigned char*)(cursor + 2);
         const unsigned char res = *(unsigned char*)(cursor + 3);
         printf("mti    %d %d %d  // r[%d] <- (bool)(r[%d] > r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_MTEI:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("mtei   %d %d %d  // r[%d] <- (bool)(r[%d] >= r[%d])\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;
@@ -246,12 +264,30 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_LTEF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("ltef   %d %d %d  // r[%d] <- (bool)(r[%d] <= r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
       case OP_MTF:
       {
         const unsigned char lv = *(unsigned char*)(cursor + 1);
         const unsigned char rv = *(unsigned char*)(cursor + 2);
         const unsigned char res = *(unsigned char*)(cursor + 3);
         printf("mtf    %d %d %d  // r[%d] <- (bool)(r[%d] > r[%d])\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_MTEF:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("mtef   %d %d %d  // r[%d] <- (bool)(r[%d] >= r[%d])\n", lv, rv, res, res, lv, rv);
         cursor += 4;
       }
       break;

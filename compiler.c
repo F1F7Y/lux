@@ -31,7 +31,9 @@ static bool lux_operator_supported(token_t* token)
     case TT_DIV:
     case TT_MOD:
     case TT_LESS:
+    case TT_LESSEQ:
     case TT_MORE:
+    case TT_MOREEQ:
     case TT_EQUALS:
     case TT_NOTEQUALS:
       return true;
@@ -50,7 +52,9 @@ static int lux_operator_priority(token_t* token)
     case TT_NOTEQUALS:
       return 0;
     case TT_LESS:
+    case TT_LESSEQ:
     case TT_MORE:
+    case TT_MOREEQ:
       return 1;
     case TT_PLUS:
     case TT_MINUS:
@@ -80,7 +84,9 @@ static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rt
       case TT_DIV: *_op = OP_DIVI; *_type = vm->tint; return true;
       case TT_MOD: *_op = OP_MOD; *_type = vm->tint; return true;
       case TT_LESS: *_op = OP_LTI; *_type = vm->tbool; return true;
+      case TT_LESSEQ: *_op = OP_LTEI; *_type = vm->tbool; return true;
       case TT_MORE: *_op = OP_MTI; *_type = vm->tbool; return true;
+      case TT_MOREEQ: *_op = OP_MTEI; *_type = vm->tbool; return true;
       case TT_EQUALS: *_op = OP_EQI; *_type = vm->tbool; return true;
       case TT_NOTEQUALS: *_op = OP_NEQI; *_type = vm->tbool; return true;
     }
@@ -94,7 +100,9 @@ static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rt
       case TT_MULT: *_op = OP_MULF; *_type = vm->tfloat; return true;
       case TT_DIV: *_op = OP_DIVF; *_type = vm->tfloat; return true;
       case TT_LESS: *_op = OP_LTF; *_type = vm->tbool; return true;
+      case TT_LESSEQ: *_op = OP_LTEF; *_type = vm->tbool; return true;
       case TT_MORE: *_op = OP_MTF; *_type = vm->tbool; return true;
+      case TT_MOREEQ: *_op = OP_MTEF; *_type = vm->tbool; return true;
       case TT_EQUALS: *_op = OP_EQF; *_type = vm->tbool; return true;
       case TT_NOTEQUALS: *_op = OP_NEQF; *_type = vm->tbool; return true;
     }

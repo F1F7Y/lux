@@ -152,9 +152,21 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 4;
       }
       break;
+      case OP_LTEI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue <= frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        cursor += 4;
+      }
+      break;
       case OP_MTI:
       {
         frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue > frame->r[*(unsigned char*)(cursor + 2)].ivalue);
+        cursor += 4;
+      }
+      break;
+      case OP_MTEI:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].ivalue >= frame->r[*(unsigned char*)(cursor + 2)].ivalue);
         cursor += 4;
       }
       break;
@@ -164,9 +176,21 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 4;
       }
       break;
+      case OP_LTEF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue <= frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        cursor += 4;
+      }
+      break;
       case OP_MTF:
       {
         frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue > frame->r[*(unsigned char*)(cursor + 2)].fvalue);
+        cursor += 4;
+      }
+      break;
+      case OP_MTEF:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].fvalue = (bool)(frame->r[*(unsigned char*)(cursor + 1)].fvalue >= frame->r[*(unsigned char*)(cursor + 2)].fvalue);
         cursor += 4;
       }
       break;

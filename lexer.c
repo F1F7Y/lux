@@ -218,8 +218,28 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
       case '*': token->type = TT_MULT; break;
       case '/': token->type = TT_DIV; break;
       case '%': token->type = TT_MOD; break;
-      case '<': token->type = TT_LESS; break;
-      case '>': token->type = TT_MORE; break;
+      case '<':
+      {
+        token->type = TT_LESS;
+        if(*c == '=')
+        {
+          token->type = TT_LESSEQ;
+          token->length++;
+          c++;
+        }
+      }
+      break;
+      case '>':
+      {
+        token->type = TT_MORE;
+        if(*c == '=')
+        {
+          token->type = TT_MOREEQ;
+          token->length++;
+          c++;
+        }
+      }
+      break;
       case '=':
       {
         token->type = TT_ASIGN; 
