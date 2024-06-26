@@ -424,20 +424,9 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
     lux_lexer_unget_last_token(comp->lex);
   }
   // Check if we're declaring a new variable
-  if(!lux_compiler_parse_value(comp, closure, &value, &valr, &valtype))
+  vmtype_t* type = lux_vm_get_type_t(comp->vm, &value);
+  if(allowprimary && type != NULL)
   {
-    if(!allowprimary)
-    {
-      return false;
-    }
-
-    vmtype_t* type = lux_vm_get_type_t(comp->vm, &value);
-    if(value.type != TT_NAME || type == NULL)
-    {
-      lux_vm_set_error_t(comp->vm, "Expected expression, got %s", &value);
-      return false;
-    }
-
     token_t name;
     lux_lexer_get_token(comp->lex, &name);
     if(name.type != TT_NAME)
@@ -485,6 +474,9 @@ static bool lux_compiler_expression(compiler_t* comp, closure_t* closure, vmtype
 
     return true;
   }
+
+  // Try to get the value and parse the rest of the expression
+  TRY(lux_compiler_parse_value(comp, closure, &value, &valr, &valtype))
 
   // Peek next op
   token_t nextop;
