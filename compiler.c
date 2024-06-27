@@ -45,14 +45,16 @@ static bool lux_operator_supported(token_t* token)
 
 //-----------------------------------------------
 // Returns the priority of an operator
+// The higher the priority the sooner it'll be
+// evaluated
 //-----------------------------------------------
 static int lux_operator_priority(token_t* token)
 {
   switch(token->type)
   {
-    case TT_LOGICAND:
-      return 0;
     case TT_LOGICOR:
+      return 0;
+    case TT_LOGICAND:
       return 1;
     case TT_EQUALS:
     case TT_NOTEQUALS:
