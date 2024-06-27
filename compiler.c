@@ -38,6 +38,9 @@ static bool lux_operator_supported(token_t* token)
     case TT_NOTEQUALS:
     case TT_LOGICAND:
     case TT_LOGICOR:
+    case TT_BWAND:
+    case TT_BWXOR:
+    case TT_BWOR:
       return true;
   }
   return false;
@@ -56,21 +59,27 @@ static int lux_operator_priority(token_t* token)
       return 0;
     case TT_LOGICAND:
       return 1;
+    case TT_BWOR:
+      return 2;
+    case TT_BWXOR:
+      return 3;
+    case TT_BWAND:
+      return 4;
     case TT_EQUALS:
     case TT_NOTEQUALS:
-      return 2;
+      return 5;
     case TT_LESS:
     case TT_LESSEQ:
     case TT_MORE:
     case TT_MOREEQ:
-      return 3;
+      return 6;
     case TT_PLUS:
     case TT_MINUS:
-      return 4;
+      return 7;
     case TT_MULT:
     case TT_DIV:
     case TT_MOD:
-      return 5;
+      return 8;
   }
 
   return 0;
@@ -97,6 +106,9 @@ static bool lux_instruction_for_operator(vm_t* vm, vmtype_t* ltype, vmtype_t* rt
       case TT_MOREEQ: *_op = OP_MTEI; *_type = vm->tbool; return true;
       case TT_EQUALS: *_op = OP_EQI; *_type = vm->tbool; return true;
       case TT_NOTEQUALS: *_op = OP_NEQI; *_type = vm->tbool; return true;
+      case TT_BWAND: *_op = OP_BAND; *_type = vm->tint; return true;
+      case TT_BWXOR: *_op = OP_BXOR; *_type = vm->tint; return true;
+      case TT_BWOR: *_op = OP_BOR; *_type = vm->tint; return true;
     }
   }
   else if(ltype == vm->tfloat && rtype == vm->tfloat)

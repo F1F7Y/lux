@@ -309,6 +309,33 @@ void lux_debug_dump_code(closure_t* closure)
         cursor += 4;
       }
       break;
+      case OP_BAND:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("band   %d %d %d  // r[%d] <- r[%d] & r[%d]\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_BXOR:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("bxor   %d %d %d  // r[%d] <- r[%d] ^ r[%d]\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
+      case OP_BOR:
+      {
+        const unsigned char lv = *(unsigned char*)(cursor + 1);
+        const unsigned char rv = *(unsigned char*)(cursor + 2);
+        const unsigned char res = *(unsigned char*)(cursor + 3);
+        printf("bor    %d %d %d  // r[%d] <- r[%d] | r[%d]\n", lv, rv, res, res, lv, rv);
+        cursor += 4;
+      }
+      break;
       case OP_JMP:
       {
         const int offset = *(int*)(cursor + 1);

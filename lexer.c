@@ -262,7 +262,8 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
       }
       break;
       case '&':
-      { 
+      {
+        token->type = TT_BWAND;
         if(*c == '&')
         {
           token->type = TT_LOGICAND;
@@ -271,8 +272,10 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         }
       }
       break;
+      case '^': token->type = TT_BWXOR; break;
       case '|':
-      { 
+      {
+        token->type = TT_BWOR;
         if(*c == '|')
         {
           token->type = TT_LOGICOR;

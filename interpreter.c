@@ -206,6 +206,24 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 4;
       }
       break;
+      case OP_BAND:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue & frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
+      case OP_BXOR:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue ^ frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
+      case OP_BOR:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue | frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
       case OP_JMP:
       {
         cursor = code + *(int*)(cursor + 1);
