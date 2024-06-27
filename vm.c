@@ -79,9 +79,9 @@ bool lux_vm_load(vm_t* vm, char* buf)
   {
     vm->errorline = lexer.line;
     vm->errorcolumn = lexer.column;
-  }
 
-  printf("EEENNNNDDD: %d %d\n", lexer.line, lexer.column);
+    return false;
+  }
 
   return true;
 }
