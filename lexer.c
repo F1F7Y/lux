@@ -252,7 +252,8 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
       }
       break;
       case '!':
-      { 
+      {
+        token->type = TT_LOGICNOT;
         if(*c == '=')
         {
           token->type = TT_NOTEQUALS;
@@ -284,6 +285,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         }
       }
       break;
+      case '~': token->type = TT_BWNOT; break;
     }
   }
   

@@ -186,48 +186,38 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
 //-----------------------------------------------
 static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token_t* value, unsigned char* ret, vmtype_t** rettype)
 {
+  // Parse the value
+  cpvar_t* var;
+  closure_t* c;
   if(lux_token_is_c(value, '('))
   {
     TRY(lux_compiler_expression(comp, closure, NULL, ret, rettype, false))
     TRY(lux_lexer_expect_token(comp->lex, ')'))
-    return true;
   }
-  else if(value->type == TT_NAME)
+  else if(value->type == TT_NAME && (var = lux_compiler_get_var(comp, value)) != NULL)
   {
-    cpvar_t* var = lux_compiler_get_var(comp, value);
-    if(var != NULL)
-    {
-      *ret = var->r;
-      *rettype = var->type;
-      return true;
-    }
-
-    closure_t* c = lux_vm_get_function_t(comp->vm, value);
-    if(c != NULL)
-    {
-      TRY(lux_compiler_function_call(comp, closure, c))
+    *ret = var->r;
+    *rettype = var->type;
+  }
+  else if (value->type == TT_NAME && (c = lux_vm_get_function_t(comp->vm, value)) != NULL)
+  {
+    TRY(lux_compiler_function_call(comp, closure, c))
       
-      TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 11));
-      lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
-      lux_vm_closure_append_byte(comp->vm, closure, 0);
-      lux_vm_closure_append_int(comp->vm, closure, c->index);
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 11));
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
+    lux_vm_closure_append_byte(comp->vm, closure, 0);
+    lux_vm_closure_append_int(comp->vm, closure, c->index);
 
-      lux_vm_closure_append_byte(comp->vm, closure, OP_CALL);
-      lux_vm_closure_append_byte(comp->vm, closure, 0);
+    lux_vm_closure_append_byte(comp->vm, closure, OP_CALL);
+    lux_vm_closure_append_byte(comp->vm, closure, 0);
 
-      TRY(lux_compiler_alloc_register_generic(comp, ret))
+    TRY(lux_compiler_alloc_register_generic(comp, ret))
 
-      lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
-      lux_vm_closure_append_byte(comp->vm, closure, 0);
-      lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_byte(comp->vm, closure, OP_MOV);
+    lux_vm_closure_append_byte(comp->vm, closure, 0);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
 
-      *rettype = c->rettype;
-
-      return true;
-    }
-
-    lux_vm_set_error_t(comp->vm, "Unknown variable '%s'", value);
-    return false;
+    *rettype = c->rettype;
   }
   else if(value->type == TT_INT)
   {
@@ -237,7 +227,6 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
     lux_vm_closure_append_byte(comp->vm, closure, *ret);
     lux_vm_closure_append_int(comp->vm, closure, value->ivalue);
     *rettype = comp->vm->tint;
-    return true;
   }
   else if(value->type == TT_FLOAT)
   {
@@ -247,7 +236,6 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
     lux_vm_closure_append_byte(comp->vm, closure, *ret);
     lux_vm_closure_append_float(comp->vm, closure, value->fvalue);
     *rettype = comp->vm->tfloat;
-    return true;
   }
   else if(value->type == TT_BOOL)
   {
@@ -257,11 +245,14 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
     lux_vm_closure_append_byte(comp->vm, closure, *ret);
     lux_vm_closure_append_int(comp->vm, closure, value->ivalue);
     *rettype = comp->vm->tbool;
-    return true;
+  }
+  else
+  {
+    lux_vm_set_error_t(comp->vm, "Failed to get value from: '%s'", value);
+    return false;
   }
 
-  lux_vm_set_error_t(comp->vm, "Failed to get value from: '%s'", value);
-  return false;
+  return true;
 }
 
 //-----------------------------------------------

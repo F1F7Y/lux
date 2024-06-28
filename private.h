@@ -115,10 +115,12 @@ enum
   TT_NOTEQUALS, // !=
   TT_LOGICAND,  // &&
   TT_LOGICOR,   // ||
+  TT_LOGICNOT,  // !
   TT_ASIGN,     // =
   TT_BWAND,     // &
   TT_BWXOR,     // ^
   TT_BWOR,      // |
+  TT_BWNOT,     // ~
   // Literals
   TT_INT,   // Integer
   TT_FLOAT, // Float
