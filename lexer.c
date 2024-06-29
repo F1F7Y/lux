@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define WHITESPACE " \t\n\r"
-#define CHARTOKENS "(){}[]+-*/\\<>!?=@#$%^&|,.;"
+#define CHARTOKENS "(){}[]+-*/\\<>~!?=@#$%^&|,.;"
 
 static const char* reserved_tokens[] =
 {

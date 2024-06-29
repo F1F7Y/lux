@@ -186,6 +186,19 @@ static bool lux_compiler_function_call(compiler_t* comp, closure_t* closure, clo
 //-----------------------------------------------
 static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token_t* value, unsigned char* ret, vmtype_t** rettype)
 {
+  int mod = TT_EOF;
+  switch(value->type)
+  {
+    case TT_PLUS:
+    case TT_MINUS:
+    case TT_LOGICNOT:
+    case TT_BWNOT:
+    {
+      mod = value->type;
+      lux_lexer_get_token(comp->lex, value);
+    }
+  }
+
   // Parse the value
   cpvar_t* var;
   closure_t* c;
@@ -249,6 +262,92 @@ static bool lux_compiler_parse_value(compiler_t* comp, closure_t* closure, token
   else
   {
     lux_vm_set_error_t(comp->vm, "Failed to get value from: '%s'", value);
+    return false;
+  }
+
+  if(mod == TT_PLUS && *rettype == comp->vm->tint)
+  {
+    // Do nothing
+  }
+  else if(mod == TT_PLUS && *rettype == comp->vm->tfloat)
+  {
+    // Do nothing
+  }
+  else if(mod == TT_MINUS && *rettype == comp->vm->tint)
+  {
+    // Multiply by -1 int
+    unsigned char o, r;
+    TRY(lux_compiler_alloc_register_generic(comp, &o))
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 10));
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
+    lux_vm_closure_append_byte(comp->vm, closure, o);
+    lux_vm_closure_append_int(comp->vm, closure, -1);
+
+    TRY(lux_compiler_alloc_register_generic(comp, &r))
+
+    lux_vm_closure_append_byte(comp->vm, closure, OP_MULI);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_byte(comp->vm, closure, o);
+    lux_vm_closure_append_byte(comp->vm, closure, r);
+
+    lux_compiler_free_register_generic(comp, o);
+    lux_compiler_free_register_generic(comp, *ret);
+
+    *ret = r;
+  }
+  else if(mod == TT_MINUS && *rettype == comp->vm->tfloat)
+  {
+    // Multiply by -1 float
+    unsigned char o, r;
+    TRY(lux_compiler_alloc_register_generic(comp, &o))
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 10));
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LDI);
+    lux_vm_closure_append_byte(comp->vm, closure, o);
+    lux_vm_closure_append_float(comp->vm, closure, -1.0);
+
+    TRY(lux_compiler_alloc_register_generic(comp, &r))
+
+    lux_vm_closure_append_byte(comp->vm, closure, OP_MULF);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_byte(comp->vm, closure, o);
+    lux_vm_closure_append_byte(comp->vm, closure, r);
+
+    lux_compiler_free_register_generic(comp, o);
+    lux_compiler_free_register_generic(comp, *ret);
+
+    *ret = r;
+  }
+  else if(mod == TT_LOGICNOT && *rettype == comp->vm->tbool)
+  {
+    // Logic not
+    unsigned char r;
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 3));
+    TRY(lux_compiler_alloc_register_generic(comp, &r))
+    lux_vm_closure_append_byte(comp->vm, closure, OP_LNOT);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_byte(comp->vm, closure, r);
+
+    lux_compiler_free_register_generic(comp, *ret);
+
+    *ret = r;
+  }
+  else if(mod == TT_BWNOT && *rettype == comp->vm->tint)
+  {
+    // Bitwise not on int
+    unsigned char r;
+    TRYMEM(lux_vm_closure_ensure_free(comp->vm, closure, 3));
+    TRY(lux_compiler_alloc_register_generic(comp, &r))
+    lux_vm_closure_append_byte(comp->vm, closure, OP_BNOT);
+    lux_vm_closure_append_byte(comp->vm, closure, *ret);
+    lux_vm_closure_append_byte(comp->vm, closure, r);
+
+    lux_compiler_free_register_generic(comp, *ret);
+
+    *ret = r;
+  }
+  else if(mod != TT_EOF)
+  {
+    lux_vm_set_error(comp->vm, "Unexpected token in front of value");
     return false;
   }
 

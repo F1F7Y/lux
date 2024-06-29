@@ -44,9 +44,11 @@ enum
   OP_MTEF,   // 4    | <1op,1reg,1reg,1reg> | Checks if an float is larger or equals the other float
   OP_LAND,   // 4    | <1op,1reg,1reg,1reg> | Logical AND
   OP_LOR,    // 4    | <1op,1reg,1reg,1reg> | Logical OR
+  OP_LNOT,   // 3    | <1op,1reg,1reg>      | Logical NOT
   OP_BAND,   // 4    | <1op,1reg,1reg,1reg> | Bitwise AND
   OP_BXOR,   // 4    | <1op,1reg,1reg,1reg> | Bitwise XOR
   OP_BOR,    // 4    | <1op,1reg,1reg,1reg> | Bitwise OR
+  OP_BNOT,   // 3    | <1op,1reg,1reg>      | Bitwise NOT
   OP_JMP,    // 5    | <1op,4offset>        | Set cursor to specified offset
   OP_BEQZ,   // 6    | <1op,1reg,4offset>   | Set cursor to specified offset if the register is equal to 0
 };
