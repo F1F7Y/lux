@@ -236,6 +236,18 @@ bool lux_vm_interpret_frame(vm_t* vm, vmframe_t* frame)
         cursor += 3;
       }
       break;
+      case OP_LSFT:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue << frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
+      case OP_RSFT:
+      {
+        frame->r[*(unsigned char*)(cursor + 3)].ivalue = frame->r[*(unsigned char*)(cursor + 1)].ivalue >> frame->r[*(unsigned char*)(cursor + 2)].ivalue;
+        cursor += 4;
+      }
+      break;
       case OP_JMP:
       {
         cursor = code + *(int*)(cursor + 1);

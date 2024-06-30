@@ -49,6 +49,8 @@ enum
   OP_BXOR,   // 4    | <1op,1reg,1reg,1reg> | Bitwise XOR
   OP_BOR,    // 4    | <1op,1reg,1reg,1reg> | Bitwise OR
   OP_BNOT,   // 3    | <1op,1reg,1reg>      | Bitwise NOT
+  OP_LSFT,   // 4    | <1op,1reg,1reg,1reg> | Left shift int
+  OP_RSFT,   // 4    | <1op,1reg,1reg,1reg> | Right shift int
   OP_JMP,    // 5    | <1op,4offset>        | Set cursor to specified offset
   OP_BEQZ,   // 6    | <1op,1reg,4offset>   | Set cursor to specified offset if the register is equal to 0
 };
@@ -123,6 +125,8 @@ enum
   TT_BWXOR,     // ^
   TT_BWOR,      // |
   TT_BWNOT,     // ~
+  TT_LEFTSHIFT, // <<
+  TT_RIGHTSHIFT,// >>
   // Literals
   TT_INT,   // Integer
   TT_FLOAT, // Float

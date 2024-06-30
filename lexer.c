@@ -227,6 +227,12 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
           token->length++;
           c++;
         }
+        else if(*c == '<')
+        {
+          token->type = TT_LEFTSHIFT;
+          token->length++;
+          c++;
+        }
       }
       break;
       case '>':
@@ -235,6 +241,12 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '=')
         {
           token->type = TT_MOREEQ;
+          token->length++;
+          c++;
+        }
+        else if(*c == '>')
+        {
+          token->type = TT_RIGHTSHIFT;
           token->length++;
           c++;
         }
