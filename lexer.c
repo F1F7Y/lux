@@ -211,6 +211,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
   
   if(token->type == TT_TOKEN)
   {
+    bool twochar = false;
     switch(*token->buf)
     {
       case '+': token->type = TT_PLUS; break;
@@ -224,14 +225,12 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '=')
         {
           token->type = TT_LESSEQ;
-          token->length++;
-          c++;
+          twochar = true;
         }
         else if(*c == '<')
         {
           token->type = TT_LEFTSHIFT;
-          token->length++;
-          c++;
+          twochar = true;
         }
       }
       break;
@@ -241,14 +240,12 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '=')
         {
           token->type = TT_MOREEQ;
-          token->length++;
-          c++;
+          twochar = true;
         }
         else if(*c == '>')
         {
           token->type = TT_RIGHTSHIFT;
-          token->length++;
-          c++;
+          twochar = true;
         }
       }
       break;
@@ -258,8 +255,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '=')
         {
           token->type = TT_EQUALS;
-          token->length++;
-          c++;
+          twochar = true;
         }
       }
       break;
@@ -269,8 +265,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '=')
         {
           token->type = TT_NOTEQUALS;
-          token->length++;
-          c++;
+          twochar = true;
         }
       }
       break;
@@ -280,8 +275,7 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '&')
         {
           token->type = TT_LOGICAND;
-          token->length++;
-          c++;
+          twochar = true;
         }
       }
       break;
@@ -292,12 +286,16 @@ int lux_lexer_get_token(lexer_t* lex, token_t* token)
         if(*c == '|')
         {
           token->type = TT_LOGICOR;
-          token->length++;
-          c++;
+          twochar = true;
         }
       }
       break;
       case '~': token->type = TT_BWNOT; break;
+    }
+    if(twochar)
+    {
+      token->length++;
+      c++;
     }
   }
   
